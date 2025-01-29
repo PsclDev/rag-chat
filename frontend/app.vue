@@ -31,14 +31,17 @@
     <!-- Document Grid -->
     <TransitionGroup tag="div" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" name="grid"
       appear>
-      <DocumentCard v-for="doc in filteredDocuments" :key="doc.id" :document="doc" @view="viewDocument"
-        @reprocess="reprocessDocument" @delete="deleteDocument" />
+      <DocumentCard v-for="doc in filteredDocuments" :key="doc.id" :document="doc" />
     </TransitionGroup>
   </div>
 </template>
 
 <script setup lang="ts">
 import { type Document, useDocumentsStore } from '~/stores/documents'
+
+useHead({
+  title: 'KI-Run\'s RAG',
+})
 
 const store = useDocumentsStore()
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -85,17 +88,6 @@ const getFileType = (mimeType: string): Document['type'] => {
   return 'document'
 }
 
-const viewDocument = (document: Document) => {
-  console.log('View document:', document.name)
-}
-
-const reprocessDocument = (document: Document) => {
-  store.reprocessDocument(document.id)
-}
-
-const deleteDocument = (document: Document) => {
-  store.deleteDocument(document.id)
-}
 </script>
 
 <style>
