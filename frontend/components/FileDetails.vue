@@ -4,14 +4,14 @@
             <!-- Header -->
             <template #header>
                 <div class="flex items-center gap-3">
-                    <UIcon :name="getFileIcon(document.type)" class="text-3xl text-emerald-400" />
+                    <UIcon :name="store.getFileIcon(file.type)" class="text-3xl text-emerald-400" />
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold text-slate-200">
-                            {{ document.name }}
+                            {{ file.name }}
                         </h3>
                         <p class="text-sm text-slate-400">
-                            {{ formatFileSize(document.size) }}
-                            <span v-if="document.pageCount">• {{ document.pageCount }} pages</span>
+                            {{ formatFileSize(file.size) }}
+                            <span v-if="file.pageCount">• {{ file.pageCount }} pages</span>
                         </p>
                     </div>
                 </div>
@@ -21,12 +21,12 @@
             <div class="space-y-6">
                 <!-- Status and Priority -->
                 <div class="flex items-center gap-3">
-                    <UBadge :color="getStatusColor(document.status)" size="sm">
-                        {{ document.status.charAt(0).toUpperCase() + document.status.slice(1) }}
+                    <UBadge :color="getStatusColor(file.status)" size="sm">
+                        {{ file.status.charAt(0).toUpperCase() + file.status.slice(1) }}
                     </UBadge>
-                    <UBadge v-if="document.priority === 'high'" color="red" size="sm">High Priority</UBadge>
-                    <span v-if="document.retryCount > 0" class="text-sm text-slate-400">
-                        {{ document.retryCount }} retries
+                    <UBadge v-if="file.priority === 'high'" color="red" size="sm">High Priority</UBadge>
+                    <span v-if="file.retryCount > 0" class="text-sm text-slate-400">
+                        {{ file.retryCount }} retries
                     </span>
                 </div>
 
@@ -36,28 +36,28 @@
                     <div class="grid grid-cols-2 gap-2 text-sm">
                         <div>
                             <span class="text-slate-400">Created:</span>
-                            <span class="text-slate-200 ml-2">{{ formatDate(document.createdAt) }}</span>
+                            <span class="text-slate-200 ml-2">{{ formatDate(file.createdAt) }}</span>
                         </div>
                         <div>
                             <span class="text-slate-400">Last Modified:</span>
-                            <span class="text-slate-200 ml-2">{{ formatDate(document.lastModified) }}</span>
+                            <span class="text-slate-200 ml-2">{{ formatDate(file.lastModified) }}</span>
                         </div>
                         <div>
                             <span class="text-slate-400">Type:</span>
-                            <span class="text-slate-200 ml-2">{{ document.mimeType }}</span>
+                            <span class="text-slate-200 ml-2">{{ file.mimeType }}</span>
                         </div>
                         <div>
                             <span class="text-slate-400">Extension:</span>
-                            <span class="text-slate-200 ml-2">{{ document.extension }}</span>
+                            <span class="text-slate-200 ml-2">{{ file.extension }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tags -->
-                <div v-if="document.tags.length > 0" class="space-y-2">
+                <div v-if="file.tags.length > 0" class="space-y-2">
                     <h4 class="text-sm font-medium text-slate-300">Tags</h4>
                     <div class="flex flex-wrap gap-1">
-                        <UBadge v-for="tag in document.tags" :key="tag" color="gray" size="sm">
+                        <UBadge v-for="tag in file.tags" :key="tag" color="gray" size="sm">
                             {{ tag }}
                         </UBadge>
                     </div>
@@ -68,11 +68,11 @@
                     <h4 class="text-sm font-medium text-slate-300">Processing Steps</h4>
                     <div class="space-y-2">
                         <div v-for="(step, index) in store.processingSteps" :key="step.id"
-                            class="flex items-center gap-2 p-2 rounded" :class="[store.getStepClass(document, index).includes('bg-emerald') ? 'bg-emerald-500/10' :
-                                store.getStepClass(document, index).includes('bg-yellow') ? 'bg-yellow-500/10' :
+                            class="flex items-center gap-2 p-2 rounded" :class="[store.getStepClass(file, index).includes('bg-emerald') ? 'bg-emerald-500/10' :
+                                store.getStepClass(file, index).includes('bg-yellow') ? 'bg-yellow-500/10' :
                                     'bg-slate-700/30']">
                             <div class="w-2 h-2 rounded-full"
-                                :class="[store.getStepClass(document, index).replace('bg-slate-700', 'bg-slate-500')]">
+                                :class="[store.getStepClass(file, index).replace('bg-slate-700', 'bg-slate-500')]">
                             </div>
                             <span class="text-sm text-slate-200">{{ step.label }}</span>
                         </div>
@@ -80,10 +80,10 @@
                 </div>
 
                 <!-- Error Message -->
-                <div v-if="document.status === 'error' && document.errorMessage" class="space-y-2">
+                <div v-if="file.status === 'error' && file.errorMessage" class="space-y-2">
                     <h4 class="text-sm font-medium text-slate-300">Error Details</h4>
                     <p class="text-sm text-red-400 bg-red-500/10 p-2 rounded">
-                        {{ document.errorMessage }}
+                        {{ file.errorMessage }}
                     </p>
                 </div>
             </div>
@@ -93,17 +93,16 @@
                 <div class="flex justify-between">
                     <div>
                         <UButton color="yellow" variant="solid" icon="i-heroicons-arrow-path"
-                            @click="emit('reprocess', props.document)">
+                            @click="emit('reprocess', props.file)">
                             Reingest
                         </UButton>
                     </div>
                     <div class="flex gap-2">
-                        <UButton color="gray" variant="solid" icon="i-heroicons-eye"
-                            @click="emit('view', props.document)">
+                        <UButton color="gray" variant="solid" icon="i-heroicons-eye" @click="emit('view', props.file)">
                             View
                         </UButton>
                         <UButton color="red" variant="solid" icon="i-heroicons-trash"
-                            @click="emit('delete', props.document)">
+                            @click="emit('delete', props.file)">
                             Delete
                         </UButton>
                     </div>
@@ -114,20 +113,20 @@
 </template>
 
 <script setup lang="ts">
-import { type Document, useDocumentsStore } from '~/stores/documents'
+import { type File, useFilesStore } from '~/stores/files.store'
 
-const store = useDocumentsStore()
+const store = useFilesStore()
 
 const props = defineProps<{
     modelValue: boolean
-    document: Document
+    file: File
 }>()
 
 const emit = defineEmits<{
     'update:modelValue': [value: boolean]
-    'view': [document: Document]
-    'reprocess': [document: Document]
-    'delete': [document: Document]
+    'view': [file: File]
+    'reprocess': [file: File]
+    'delete': [file: File]
 }>()
 
 const isOpen = computed({
@@ -135,20 +134,7 @@ const isOpen = computed({
     set: (value) => emit('update:modelValue', value)
 })
 
-const getFileIcon = (type: Document['type']) => {
-    switch (type) {
-        case 'pdf':
-            return 'i-heroicons-document-text'
-        case 'image':
-            return 'i-heroicons-photo'
-        case 'spreadsheet':
-            return 'i-heroicons-table-cells'
-        default:
-            return 'i-heroicons-document'
-    }
-}
-
-const getStatusColor = (status: Document['status']) => {
+const getStatusColor = (status: File['status']) => {
     switch (status) {
         case 'completed':
             return 'emerald'

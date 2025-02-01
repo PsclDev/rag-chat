@@ -31,25 +31,31 @@
     <!-- Document Grid -->
     <TransitionGroup tag="div" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" name="grid"
       appear>
-      <DocumentCard v-for="doc in filteredDocuments" :key="doc.id" :document="doc" />
+      <FileCard v-for="file in filteredFiles" :key="file.id" :file="file" />
     </TransitionGroup>
+
+    <!-- Upload Modal -->
+    <UploadModal v-model="showUploadModal" :files="selectedFiles" @files-change="selectedFiles = $event"
+      @upload-complete="handleUploadComplete" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { type Document, useDocumentsStore } from '~/stores/documents'
+import { type File as AppFile, useFilesStore } from '~/stores/files.store'
 
 useHead({
   title: 'KI-Run\'s RAG',
 })
 
-const store = useDocumentsStore()
+const store = useFilesStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
+const showUploadModal = ref(false)
+const selectedFiles = ref<File[]>([])
 
-const filteredDocuments = computed(() =>
-  store.getFilteredDocuments(searchQuery.value, statusFilter.value)
+const filteredFiles = computed(() =>
+  store.getFilteredFiles(searchQuery.value, statusFilter.value)
 )
 
 const triggerFileInput = () => {
@@ -72,16 +78,16 @@ const handleDrop = (event: DragEvent) => {
 }
 
 const handleFiles = (files: File[]) => {
-  for (const file of files) {
-    store.addDocument({
-      name: file.name,
-      type: getFileType(file.type),
-      size: file.size,
-    })
-  }
+  selectedFiles.value = files
+  showUploadModal.value = true
 }
 
-const getFileType = (mimeType: string): Document['type'] => {
+const handleUploadComplete = () => {
+  selectedFiles.value = []
+  showUploadModal.value = false
+}
+
+const getFileType = (mimeType: string): AppFile['type'] => {
   if (mimeType.includes('pdf')) return 'pdf'
   if (mimeType.includes('image')) return 'image'
   if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet'

@@ -20,9 +20,9 @@
 </template>
 
 <script setup lang="ts">
-import { useDocumentsStore } from '~/stores/documents'
+import { useFilesStore } from '~/stores/files.store'
 
-const store = useDocumentsStore()
+const store = useFilesStore()
 
 defineProps<{
     modelValue: string

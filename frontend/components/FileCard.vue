@@ -1,15 +1,15 @@
 <template>
     <div>
         <UCard class="bg-slate-800 border border-slate-700 hover:shadow-lg transition-shadow group relative">
-            <!-- Document Info -->
+            <!-- File Info -->
             <div class="flex items-center p-4">
-                <UIcon :name="getFileIcon(document.type)" class="text-3xl text-emerald-400 mr-4" />
+                <UIcon :name="store.getFileIcon(file.type)" class="text-3xl text-emerald-400 mr-4" />
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-slate-200 truncate">
-                        {{ document.name }}
+                        {{ file.name }}
                     </p>
                     <p class="text-xs text-slate-400">
-                        {{ formatFileSize(document.size) }}
+                        {{ formatFileSize(file.size) }}
                     </p>
                 </div>
             </div>
@@ -44,43 +44,42 @@
             <div class="px-4 pb-4">
                 <div class="flex gap-0.5 h-1">
                     <div v-for="(step, index) in store.processingSteps" :key="step.id"
-                        class="flex-1 rounded-sm transition-colors duration-300"
-                        :class="[store.getStepClass(document, index),
-                        document.status === 'processing' && index === document.currentStep ? 'animate-pulse-subtle' : '']">
+                        class="flex-1 rounded-sm transition-colors duration-300" :class="[store.getStepClass(file, index),
+                        file.status === 'processing' && index === file.currentStep ? 'animate-pulse-subtle' : '']">
                     </div>
                 </div>
                 <p class="text-xs text-slate-400 mt-2">
-                    {{ store.getCurrentStepLabel(document) }}
+                    {{ store.getCurrentStepLabel(file) }}
                 </p>
             </div>
         </UCard>
 
         <!-- Details Modal -->
-        <DocumentDetails v-model="showDetails" :document="document" @view="handleView" @reprocess="handleReprocess"
+        <FileDetails v-model="showDetails" :file="file" @view="handleView" @reprocess="handleReprocess"
             @delete="handleDelete" />
 
         <!-- Reprocess Confirmation Modal -->
         <ConfirmModal v-model="showReprocessModal" title="Confirm Reprocess"
-            :message="`Are you sure you want to reprocess '${document.name}'? This will restart the processing from the beginning.`"
+            :message="`Are you sure you want to reprocess '${file.name}'? This will restart the processing from the beginning.`"
             icon="i-heroicons-arrow-path" icon-class="text-yellow-400" confirm-button-text="Reprocess"
             confirm-button-color="yellow" @confirm="handleReprocess" />
 
         <!-- Delete Confirmation Modal -->
         <ConfirmModal v-model="showDeleteModal" title="Confirm Delete"
-            :message="`Are you sure you want to delete '${document.name}'? This action cannot be undone.`"
+            :message="`Are you sure you want to delete '${file.name}'? This action cannot be undone.`"
             icon="i-heroicons-exclamation-triangle" icon-class="text-red-400" confirm-button-text="Delete"
             confirm-button-color="red" @confirm="handleDelete" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { type Document, useDocumentsStore } from '~/stores/documents'
+import { type File, useFilesStore } from '~/stores/files.store'
 
 const props = defineProps<{
-    document: Document
+    file: File
 }>()
 
-const store = useDocumentsStore()
+const store = useFilesStore()
 const showDetails = ref(false)
 const showReprocessModal = ref(false)
 const showDeleteModal = ref(false)
@@ -89,28 +88,15 @@ const showDeleteModal = ref(false)
 const handleView = () => {
     // Here you can implement the view logic
     // For example, opening a preview modal or navigating to a view page
-    console.log('View document:', props.document.name)
+    console.log('View file:', props.file.name)
 }
 
 const handleReprocess = () => {
-    store.reprocessDocument(props.document.id)
+    store.reprocessFile(props.file.id)
 }
 
 const handleDelete = () => {
-    store.deleteDocument(props.document.id)
-}
-
-const getFileIcon = (type: Document['type']) => {
-    switch (type) {
-        case 'pdf':
-            return 'i-heroicons-document-text'
-        case 'image':
-            return 'i-heroicons-photo'
-        case 'spreadsheet':
-            return 'i-heroicons-table-cells'
-        default:
-            return 'i-heroicons-document'
-    }
+    store.deleteFile(props.file.id)
 }
 
 const formatFileSize = (bytes: number) => {
