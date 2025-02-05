@@ -1,9 +1,11 @@
+import { FileDto } from './file.dto';
+
 export interface RejectedFileDto {
-  file: Express.Multer.File;
+  file: FileDto;
   reason: string;
 }
 
 export interface FileUploadResultDto {
-  validFiles: Express.Multer.File[];
+  validFiles: FileDto[];
   rejectedFiles: RejectedFileDto[];
 }

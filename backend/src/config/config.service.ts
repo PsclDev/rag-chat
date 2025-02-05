@@ -18,6 +18,10 @@ const CONFIG_SCHEMA = z.object({
     password: z.string().min(1),
     database: z.string().min(1),
   }),
+
+  fileStorage: z.object({
+    path: z.string().min(1),
+  }),
 });
 
 @Injectable()
@@ -37,6 +41,10 @@ export class ConfigService {
     user: process.env.APP_DB_USER || '',
     password: process.env.APP_DB_PASSWORD || '',
     database: process.env.APP_DB_NAME || 'deadrag',
+  };
+
+  fileStorage = {
+    path: process.env.FILE_STORAGE_PATH || 'data/storage',
   };
 
   // ===

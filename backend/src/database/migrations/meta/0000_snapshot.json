@@ -1,5 +1,5 @@
 {
-  "id": "1c84283f-ac46-43c0-ac02-0793cae737e4",
+  "id": "b842bbad-0c95-44fa-97be-ee7d250fce71",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -14,20 +14,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "fieldname": {
-          "name": "fieldname",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "originalname": {
           "name": "originalname",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "encoding": {
-          "name": "encoding",
           "type": "text",
           "primaryKey": false,
           "notNull": true

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
+import { FileUploadResultDto } from './dto/upload.dto';
 import { FileUploadService } from './file-upload.service';
 
 @Controller('file')
@@ -14,7 +15,10 @@ export class FileUploadController {
 
   @Post('upload')
   @UseInterceptors(AnyFilesInterceptor())
-  uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.fileUploadService.handleUpload(files);
+  async uploadFile(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ): Promise<FileUploadResultDto> {
+    const result = await this.fileUploadService.handleUpload(files);
+    return result;
   }
 }
