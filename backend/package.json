@@ -12,15 +12,22 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "db:generate": "drizzle-kit generate --config ./src/database/drizzle.config.ts --name $1"
   },
   "dependencies": {
+    "@knaadh/nestjs-drizzle-pg": "^1.2.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.4.3",
+    "dotenv": "^16.4.7",
+    "dotenv-expand": "^12.0.1",
+    "drizzle-kit": "^0.30.4",
     "multer": "^1.4.5-lts.1",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.2.0"
+    "rxjs": "^7.2.0",
+    "zod": "^3.24.1",
+    "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
