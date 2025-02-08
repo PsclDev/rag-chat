@@ -19,6 +19,7 @@ export class FileUploadController {
     @UploadedFiles() files: Array<Express.Multer.File>,
   ): Promise<FileUploadResultDto> {
     const result = await this.fileUploadService.handleUpload(files);
+    await new Promise((resolve) => setTimeout(resolve, 4000)); // Wait 4 seconds
     return result;
   }
 }

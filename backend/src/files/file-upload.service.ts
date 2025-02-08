@@ -49,15 +49,7 @@ export class FileUploadService {
         this.cleanupOnFailure(file.path, filePath);
 
         rejectedFiles.push({
-          file: {
-            id: 'fileId',
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            filename: file.filename,
-            size: file.size,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          file,
           reason: error.message,
         });
         this.logger.error(error);

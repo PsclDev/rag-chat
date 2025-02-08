@@ -1,7 +1,7 @@
 import { FileDto } from './file.dto';
 
 export interface RejectedFileDto {
-  file: FileDto;
+  file: Express.Multer.File;
   reason: string;
 }
 
