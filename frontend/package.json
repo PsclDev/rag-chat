@@ -15,6 +15,7 @@
     "nuxt": "^3.15.3",
     "pinia": "^2.3.1",
     "vue": "latest",
+    "vue-pdf-embed": "^2.1.2",
     "vue-router": "latest"
   }
 }

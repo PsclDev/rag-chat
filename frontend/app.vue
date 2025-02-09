@@ -41,21 +41,34 @@
 </template>
 
 <script setup lang="ts">
-import { type File as AppFile, useFilesStore } from '~/stores/files.store'
+import { useFilesStore } from '~/stores/files.store'
 
 useHead({
   title: 'KI-Run\'s RAG',
 })
 
 const store = useFilesStore()
+const { files } = storeToRefs(store)
 const fileInput = ref<HTMLInputElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const showUploadModal = ref(false)
 const selectedFiles = ref<File[]>([])
 
+onMounted(async () => {
+  await store.getFiles()
+})
+
 const filteredFiles = computed(() =>
-  store.getFilteredFiles(searchQuery.value, statusFilter.value)
+  files.value
+    .filter(file => {
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        return file.originalname.toLowerCase().includes(query)
+      }
+
+      return true
+    })
 )
 
 const triggerFileInput = () => {
@@ -85,13 +98,6 @@ const handleFiles = (files: File[]) => {
 const handleUploadComplete = () => {
   selectedFiles.value = []
   showUploadModal.value = false
-}
-
-const getFileType = (mimeType: string): AppFile['type'] => {
-  if (mimeType.includes('pdf')) return 'pdf'
-  if (mimeType.includes('image')) return 'image'
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet'
-  return 'document'
 }
 
 </script>

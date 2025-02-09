@@ -13,22 +13,22 @@
                 <div v-else-if="status === 'error'" class="w-2 h-2 bg-red-400 rounded-full"></div>
                 <div v-else-if="status === 'pending'" class="w-2 h-2 bg-slate-400 rounded-full"></div>
                 {{ status.charAt(0).toUpperCase() + status.slice(1) }}
-                <span class="text-xs opacity-75">({{ store.getStatusCount(status) }})</span>
+                <span class="text-xs opacity-75">({{ statusCounts(status) }})</span>
             </div>
         </button>
     </div>
 </template>
 
 <script setup lang="ts">
-import { useFilesStore } from '~/stores/files.store'
-
-const store = useFilesStore()
-
 defineProps<{
     modelValue: string
 }>()
 
-defineEmits<{
-    'update:modelValue': (value: string) => void
+const emit = defineEmits<{
+    (e: 'update:modelValue', value: string): void
 }>()
+
+function statusCounts(status: string) {
+    return 0;
+}
 </script>

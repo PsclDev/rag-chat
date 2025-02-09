@@ -16,34 +16,33 @@
                     <div v-for="(file, index) in files" :key="index"
                         class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
                         <div class="flex items-center space-x-3">
-                            <UIcon :name="store.getFileIcon(getFileType(file.type))"
-                                class="text-2xl text-emerald-400" />
-                            <div>
+                            <UIcon :name="useFileIcon(file.type)" class="text-2xl text-emerald-400" />
+                            <div class="flex-1">
                                 <p class="text-sm font-medium text-slate-200">{{ file.name }}</p>
                                 <p class="text-xs text-slate-400">{{ formatFileSize(file.size) }}</p>
+                                <p v-if="isFileRejected(file.name)" class="text-xs text-red-400 mt-1">
+                                    {{ getRejectedMessage(file.name) }}
+                                </p>
                             </div>
                         </div>
-                        <UButton color="red" variant="ghost" icon="i-heroicons-x-mark" @click="removeFile(index)"
-                            size="xs">
-                            Remove
-                        </UButton>
+                        <div class="flex items-center gap-2">
+                            <template v-if="rejectedFileStatus.length > 0">
+                                <UIcon v-if="!isFileRejected(file.name)" name="i-heroicons-check-circle"
+                                    class="text-xl text-emerald-400" />
+                                <UIcon v-else name="i-heroicons-x-circle" class="text-xl text-red-400" />
+                            </template>
+                            <UButton v-if="!isUploading" color="red" variant="ghost" icon="i-heroicons-x-mark"
+                                @click="removeFile(index)" size="xs">
+                                Remove
+                            </UButton>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Upload Progress -->
                 <div v-if="isUploading" class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-slate-200">Uploading...</span>
-                        <span class="text-slate-400">{{ uploadProgress }}%</span>
-                    </div>
-                    <div class="w-full bg-slate-700 rounded-full h-2">
-                        <div class="bg-emerald-400 h-2 rounded-full transition-all duration-300"
-                            :style="{ width: `${uploadProgress}%` }"></div>
-                    </div>
+                    <UProgress animation="swing" />
                 </div>
-
-                <!-- Error Message -->
-                <p v-if="errorMessage" class="text-sm text-red-400">{{ errorMessage }}</p>
             </div>
 
             <!-- Footer -->
@@ -52,7 +51,7 @@
                     <UButton color="gray" variant="solid" :disabled="isUploading" @click="isOpen = false">
                         Cancel
                     </UButton>
-                    <UButton color="emerald" variant="solid" :loading="isUploading"
+                    <UButton loading-auto color="emerald" variant="solid" :loading="isUploading"
                         :disabled="files.length === 0 || isUploading" @click="startUpload">
                         Upload
                     </UButton>
@@ -63,7 +62,8 @@
 </template>
 
 <script setup lang="ts">
-const config = useRuntimeConfig()
+import type { RejectedFileDto } from '~/types/file.types'
+
 const store = useFilesStore()
 
 const props = defineProps<{
@@ -83,8 +83,7 @@ const isOpen = computed({
 })
 
 const isUploading = ref(false)
-const uploadProgress = ref(0)
-const errorMessage = ref('')
+const rejectedFileStatus = ref<{ filename: string, message: string }[]>([])
 
 const removeFile = (index: number) => {
     const newFiles = [...props.files]
@@ -100,67 +99,36 @@ const formatFileSize = (bytes: number) => {
     return `${Number.parseFloat((bytes / (k ** i)).toFixed(2))} ${sizes[i]}`
 }
 
-const getFileType = (mimeType: string): 'pdf' | 'image' | 'spreadsheet' | 'document' => {
-    if (mimeType.includes('pdf')) return 'pdf'
-    if (mimeType.includes('image')) return 'image'
-    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'spreadsheet'
-    return 'document'
-}
-
 const startUpload = async () => {
     if (props.files.length === 0) return
 
     isUploading.value = true
-    errorMessage.value = ''
-    uploadProgress.value = 0
-
     try {
-        const formData = new FormData()
-        props.files.forEach(file => {
-            formData.append('files', file)
-        })
+        const result = await store.addFile(props.files)
 
-        const response = await fetch(`${config.public.apiBaseUrl}/file/upload`, {
-            method: 'POST',
-            body: formData
-        })
-
-        if (!response.ok) {
-            throw new Error('Upload failed')
+        if (result.rejectedFiles.length === 0) {
+            isOpen.value = false
+            emit('uploadComplete')
         }
 
-        const result = await response.json()
+        rejectedFileStatus.value = result.rejectedFiles.map((file: RejectedFileDto) => ({
+            filename: file.file.originalname,
+            message: file.reason
+        }))
 
-        // Add documents to store
-        result.validFiles.forEach((file: any) => {
-            store.addDocument({
-                name: file.originalname,
-                type: getFileType(file.mimetype),
-                size: file.size
-            })
-        })
 
-        isOpen.value = false
-        emit('uploadComplete')
     } catch (error) {
-        errorMessage.value = error instanceof Error ? error.message : 'Upload failed'
+        console.log(error)
     } finally {
         isUploading.value = false
     }
 }
 
-// Simulate upload progress
-watch(isUploading, (value) => {
-    if (value) {
-        const interval = setInterval(() => {
-            if (uploadProgress.value < 90) {
-                uploadProgress.value += Math.random() * 10
-            }
-            if (!isUploading.value) {
-                clearInterval(interval)
-                uploadProgress.value = 100
-            }
-        }, 200)
-    }
-})
+const isFileRejected = (filename: string) => {
+    return rejectedFileStatus.value.some(file => file.filename === filename)
+}
+
+const getRejectedMessage = (filename: string) => {
+    return rejectedFileStatus.value.find(file => file.filename === filename)?.message
+}
 </script>

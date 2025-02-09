@@ -3,10 +3,10 @@
         <UCard class="bg-slate-800 border border-slate-700 hover:shadow-lg transition-shadow group relative">
             <!-- File Info -->
             <div class="flex items-center p-4">
-                <UIcon :name="store.getFileIcon(file.type)" class="text-3xl text-emerald-400 mr-4" />
+                <UIcon :name="useFileIcon(file.mimetype)" class="text-3xl text-emerald-400 mr-4" />
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-slate-200 truncate">
-                        {{ file.name }}
+                        {{ file.originalname }}
                     </p>
                     <p class="text-xs text-slate-400">
                         {{ formatFileSize(file.size) }}
@@ -29,28 +29,11 @@
                         @click="showDetails = true">
                         Details
                     </UButton>
-                    <UButton size="xs" color="yellow" variant="solid" icon="i-heroicons-arrow-path"
-                        @click="showReprocessModal = true">
-                        Reingest
-                    </UButton>
                     <UButton size="xs" color="red" variant="solid" icon="i-heroicons-trash"
                         @click="showDeleteModal = true">
                         Delete
                     </UButton>
                 </div>
-            </div>
-
-            <!-- Processing Steps -->
-            <div class="px-4 pb-4">
-                <div class="flex gap-0.5 h-1">
-                    <div v-for="(step, index) in store.processingSteps" :key="step.id"
-                        class="flex-1 rounded-sm transition-colors duration-300" :class="[store.getStepClass(file, index),
-                        file.status === 'processing' && index === file.currentStep ? 'animate-pulse-subtle' : '']">
-                    </div>
-                </div>
-                <p class="text-xs text-slate-400 mt-2">
-                    {{ store.getCurrentStepLabel(file) }}
-                </p>
             </div>
         </UCard>
 
@@ -58,37 +41,32 @@
         <FileDetails v-model="showDetails" :file="file" @view="handleView" @reprocess="handleReprocess"
             @delete="handleDelete" />
 
-        <!-- Reprocess Confirmation Modal -->
-        <ConfirmModal v-model="showReprocessModal" title="Confirm Reprocess"
-            :message="`Are you sure you want to reprocess '${file.name}'? This will restart the processing from the beginning.`"
-            icon="i-heroicons-arrow-path" icon-class="text-yellow-400" confirm-button-text="Reprocess"
-            confirm-button-color="yellow" @confirm="handleReprocess" />
+        <!-- PDF Embed Modal -->
+        <PdfEmbed v-model="showEmbed" :file-id="file.id" />
 
         <!-- Delete Confirmation Modal -->
         <ConfirmModal v-model="showDeleteModal" title="Confirm Delete"
-            :message="`Are you sure you want to delete '${file.name}'? This action cannot be undone.`"
+            :message="`Are you sure you want to delete '${file.originalname}'? This action cannot be undone.`"
             icon="i-heroicons-exclamation-triangle" icon-class="text-red-400" confirm-button-text="Delete"
             confirm-button-color="red" @confirm="handleDelete" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { type File, useFilesStore } from '~/stores/files.store'
-
+import { useFilesStore } from '~/stores/files.store'
+import type { FileDto } from '~/types/file.types'
 const props = defineProps<{
-    file: File
+    file: FileDto
 }>()
 
 const store = useFilesStore()
+const showEmbed = ref(false)
 const showDetails = ref(false)
-const showReprocessModal = ref(false)
 const showDeleteModal = ref(false)
 
 // Action handlers
 const handleView = () => {
-    // Here you can implement the view logic
-    // For example, opening a preview modal or navigating to a view page
-    console.log('View file:', props.file.name)
+    showEmbed.value = true
 }
 
 const handleReprocess = () => {
