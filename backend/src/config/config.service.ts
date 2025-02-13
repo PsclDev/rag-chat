@@ -22,6 +22,22 @@ const CONFIG_SCHEMA = z.object({
   fileStorage: z.object({
     path: z.string().min(1),
   }),
+
+  ingestion: z.object({
+    voyageai: z.object({
+      apiKey: z.string().min(1),
+    }),
+    unstructured: z.object({
+      serverURL: z.string().min(1),
+      apiKey: z.string().min(1),
+    }),
+  }),
+
+  llm: z.object({
+    anthropic: z.object({
+      apiKey: z.string().min(1),
+    }),
+  }),
 });
 
 @Injectable()
@@ -45,6 +61,22 @@ export class ConfigService {
 
   fileStorage = {
     path: process.env.FILE_STORAGE_PATH || 'data/storage',
+  };
+
+  ingestion = {
+    voyageai: {
+      apiKey: process.env.VOYAGEAI_API_KEY || '',
+    },
+    unstructured: {
+      serverURL: process.env.UNSTRUCTURED_SERVER_URL || '',
+      apiKey: process.env.UNSTRUCTURED_API_KEY || '',
+    },
+  };
+
+  llm = {
+    anthropic: {
+      apiKey: process.env.ANTHROPIC_API_KEY || '',
+    },
   };
 
   // ===

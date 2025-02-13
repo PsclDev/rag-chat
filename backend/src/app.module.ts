@@ -3,8 +3,9 @@ import { ConfigModule } from '@config/config.module';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as DRIZZLE_SCHEMA from '@database/drizzle.schema';
 import { DrizzlePGModule } from '@knaadh/nestjs-drizzle-pg';
-import { Logger, Module, OnApplicationBootstrap } from '@nestjs/common';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { IngestionModule } from 'ingestion/ingestion.module';
 
 import { AppController } from './app.controller';
 import { PG_MIGRATIONS_PATH, PG_PROVIDER } from './app.definition';
@@ -15,6 +16,7 @@ import { FileModule } from './files/file.module';
   imports: [
     ConfigModule,
     FileModule,
+    IngestionModule,
     DrizzlePGModule.registerAsync({
       tag: PG_PROVIDER,
       inject: [ConfigService],
@@ -42,7 +44,7 @@ import { FileModule } from './files/file.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule implements OnApplicationBootstrap {
+export class AppModule implements OnModuleInit {
   private readonly logger = new Logger('AppModule');
 
   constructor(
@@ -50,7 +52,7 @@ export class AppModule implements OnApplicationBootstrap {
     private readonly db: DrizzleDb,
   ) {}
 
-  async onApplicationBootstrap() {
+  async onModuleInit(): Promise<void> {
     this.logger.log('Trying to migrate database...');
     await migrate(this.db, { migrationsFolder: PG_MIGRATIONS_PATH });
   }

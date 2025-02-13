@@ -22,6 +22,12 @@
       "@config/*": ["config/*"],
       "@database": ["database"],
       "@database/*": ["database/*"],
+      "@file": ["files"],
+      "@file/*": ["files/*"],
+      "@ingestion": ["ingestion"],
+      "@ingestion/*": ["ingestion/*"],
+      "@llm": ["llm"],
+      "@llm/*": ["llm/*"],
     },
   }
 }

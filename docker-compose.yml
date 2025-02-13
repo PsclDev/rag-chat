@@ -1,0 +1,8 @@
+services:
+  unstructured:
+    restart: always
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:0.0.80
+    ports:
+      - 5001:8000
+    environment:
+      UNSTRUCTURED_API_KEY: superSecret
