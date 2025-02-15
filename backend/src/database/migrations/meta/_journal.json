@@ -15,6 +15,13 @@
       "when": 1739477491789,
       "tag": "0001_init_embedding",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1739636247358,
+      "tag": "0002_init_file_status",
+      "breakpoints": true
     }
   ]
 }

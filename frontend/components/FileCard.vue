@@ -35,6 +35,18 @@
                     </UButton>
                 </div>
             </div>
+
+            <div class="px-4 pb-4 group-hover:opacity-20">
+                <div class="flex gap-0.5 h-1">
+                    <div v-for="(step) in processingSteps" :key="step.status"
+                        class="flex-1 rounded-sm transition-colors duration-300"
+                        :class="[getCardStepClass(step, file.status)]">
+                    </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">
+                    {{ getCurrentStepLabel(file.status) }}
+                </p>
+            </div>
         </UCard>
 
         <!-- Details Modal -->
@@ -60,6 +72,7 @@ const props = defineProps<{
 }>()
 
 const store = useFilesStore()
+const { processingSteps, getCardStepClass, getCurrentStepLabel } = useFileStatus();
 const showEmbed = ref(false)
 const showDetails = ref(false)
 const showDeleteModal = ref(false)

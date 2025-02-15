@@ -29,8 +29,7 @@
     </div>
 
     <!-- Document Grid -->
-    <TransitionGroup tag="div" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" name="grid"
-      appear>
+    <TransitionGroup tag="div" class="grid gap-4 auto-cols-fr" :class="gridColumns" name="grid" appear>
       <FileCard v-for="file in filteredFiles" :key="file.id" :file="file" />
     </TransitionGroup>
 
@@ -49,6 +48,7 @@ useHead({
 
 const store = useFilesStore()
 const { files } = storeToRefs(store)
+const { getCurrentStep } = useFileStatus()
 const fileInput = ref<HTMLInputElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
@@ -62,14 +62,37 @@ onMounted(async () => {
 const filteredFiles = computed(() =>
   files.value
     .filter(file => {
+      // Apply search filter
       if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
-        return file.originalname.toLowerCase().includes(query)
+        if (!file.originalname.toLowerCase().includes(query)) {
+          return false
+        }
+      }
+
+      // Apply status filter
+      if (statusFilter.value !== 'all') {
+        const currentStep = getCurrentStep(file.status)
+        if (currentStep !== statusFilter.value) {
+          return false
+        }
       }
 
       return true
     })
 )
+
+const gridColumns = computed(() => {
+  const length = filteredFiles.value.length
+  return {
+    'grid-cols-1 sm:grid-cols-2': length >= 1,
+    'md:grid-cols-3': length < 15,
+    'md:grid-cols-4': length >= 15,
+    'lg:grid-cols-3': length < 12,
+    'lg:grid-cols-4': length >= 12,
+    'lg:grid-cols-5': length >= 25,
+  }
+})
 
 const triggerFileInput = () => {
   fileInput.value?.click()

@@ -16,16 +16,26 @@ export class FileService {
   ) {}
 
   async getFiles(): Promise<FileEntity[]> {
-    return await this.db.select().from(File);
+    return await this.db.query.File.findMany({
+      with: {
+        status: true,
+      },
+    });
   }
 
   async getFile(id: string): Promise<FileEntity> {
-    const file = await this.db.select().from(File).where(eq(File.id, id));
+    const file = await this.db.query.File.findFirst({
+      where: eq(File.id, id),
+      with: {
+        status: true,
+      },
+    });
+
     if (!file) {
       throw new NotFoundException('File not found');
     }
 
-    return file[0];
+    return file;
   }
 
   async deleteFile(id: string): Promise<void> {

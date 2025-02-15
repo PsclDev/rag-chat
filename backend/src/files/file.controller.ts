@@ -1,6 +1,6 @@
 import { createReadStream } from 'fs';
 
-import { toDto } from '@database';
+import { toFileDto } from '@database';
 import {
   Controller,
   Delete,
@@ -24,7 +24,7 @@ export class FileController {
   @Get()
   async getFiles(): Promise<FileDto[]> {
     const result = await this.fileService.getFiles();
-    return result.map(toDto);
+    return result.map(toFileDto);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import type { FileDto, FileUploadResultDto } from '../types/file.types';
+import type { FileDto, FileUploadResultDto, FileStatusStep } from '../types/file.types';
 
 export const useFilesStore = defineStore("files", () => {
 	const baseUrl = useRuntimeConfig().public.apiBaseUrl;

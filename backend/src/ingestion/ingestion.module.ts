@@ -13,6 +13,6 @@ export class IngestionModule implements OnApplicationBootstrap {
   constructor(private readonly ingestionService: IngestionService) {}
 
   async onApplicationBootstrap() {
-    await this.ingestionService.startIngestion();
+    // await this.ingestionService.startIngestion();
   }
 }

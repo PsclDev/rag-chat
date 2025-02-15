@@ -37,6 +37,19 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="space-y-2">
+                    <h4 class="text-sm font-medium text-slate-300">Processing Steps</h4>
+                    <div class="space-y-2">
+                        <div v-for="step in processingSteps" :key="step.status"
+                            class="flex items-center gap-2 p-2 rounded"
+                            :class="[getDetailStepClass(step, file.status)]">
+                            <div class="w-2 h-2 rounded-full" :class="[getCardStepClass(step, file.status)]">
+                            </div>
+                            <span class="text-sm text-slate-200">{{ step.label }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Footer -->
@@ -64,10 +77,9 @@
 </template>
 
 <script setup lang="ts">
-import { useFilesStore } from '~/stores/files.store'
 import type { FileDto } from '~/types/file.types'
 
-const store = useFilesStore()
+const { processingSteps, getDetailStepClass, getCardStepClass } = useFileStatus();
 
 const props = defineProps<{
     modelValue: boolean

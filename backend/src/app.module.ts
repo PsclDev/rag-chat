@@ -55,5 +55,6 @@ export class AppModule implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     this.logger.log('Trying to migrate database...');
     await migrate(this.db, { migrationsFolder: PG_MIGRATIONS_PATH });
+    this.logger.log('Database migrated successfully');
   }
 }

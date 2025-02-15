@@ -4,11 +4,12 @@ import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as schema from '@database';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { generateId } from 'shared';
 
 import { FileDto } from './dto/file.dto';
 import { FileUploadResultDto, RejectedFileDto } from './dto/upload.dto';
-import { FileEntity, toDto } from './schema/file.schema';
+import { FileEntity, toFileDto } from './schema/file.schema';
 
 @Injectable()
 export class FileUploadService {
@@ -99,19 +100,32 @@ export class FileUploadService {
     path: string,
     meta: Express.Multer.File,
   ): Promise<FileDto> {
-    const [result]: FileEntity[] = await this.db
-      .insert(schema.File)
-      .values({
+    const fileQueueId = generateId();
+
+    const [result]: FileEntity[] = await this.db.transaction(async (tx) => {
+      await tx.insert(schema.File).values({
         id,
         path,
         size: meta.size,
         mimetype: meta.mimetype,
         originalname: meta.originalname,
         filename: meta.filename,
-      })
-      .returning();
+      });
 
-    return toDto(result);
+      await tx.insert(schema.FileStatus).values({
+        id: fileQueueId,
+        fileId: id,
+      });
+
+      return await tx.query.File.findMany({
+        where: eq(schema.File.id, id),
+        with: {
+          status: true,
+        },
+      });
+    });
+
+    return toFileDto(result);
   }
 
   private cleanupOnFailure(oldPath: string, newPath: string): void {
