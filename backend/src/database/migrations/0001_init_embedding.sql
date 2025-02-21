@@ -6,3 +6,4 @@ CREATE TABLE "embedding" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
+ALTER TABLE "embedding" ADD CONSTRAINT "embedding_file_id_file_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."file"("id") ON DELETE CASCADE ON UPDATE no action;

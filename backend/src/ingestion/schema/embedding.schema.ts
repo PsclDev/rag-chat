@@ -1,8 +1,12 @@
 import { pgTable, serial, text, timestamp, vector } from 'drizzle-orm/pg-core';
 
+import { File } from '../../files/schema/file.schema';
+
 export const Embedding = pgTable('embedding', {
   id: serial('id').primaryKey(),
-  fileId: text('file_id').notNull(),
+  fileId: text('file_id')
+    .notNull()
+    .references(() => File.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   embedding: vector('embedding', { dimensions: 1024 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),

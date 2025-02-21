@@ -17,7 +17,7 @@ export const FileStatus = pgTable(
     id: text('id').primaryKey(),
     fileId: text('file_id')
       .notNull()
-      .references(() => File.id),
+      .references(() => File.id, { onDelete: 'cascade' }),
     step: text('step', {
       enum: ['queued', 'processing', 'completed', 'failed'],
     })

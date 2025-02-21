@@ -10,4 +10,4 @@ CREATE TABLE "file_status" (
 	CONSTRAINT "file_status_file_id_step_unique" UNIQUE("file_id","step")
 );
 --> statement-breakpoint
-ALTER TABLE "file_status" ADD CONSTRAINT "file_status_file_id_file_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."file"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "file_status" ADD CONSTRAINT "file_status_file_id_file_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."file"("id") ON DELETE CASCADE ON UPDATE no action;
