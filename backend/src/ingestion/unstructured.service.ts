@@ -63,14 +63,17 @@ export class UnstructuredService {
 
       this.logger.log('Response', {
         ...rest,
-        elementsCount: elements.length,
+        elementsCount: elements?.length,
       });
 
       return response;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Error partitioning file ${file.originalname}: ${error.message}`,
+        `Error partitioning file ${file.originalname}: ${errorMessage}`,
       );
+      throw error;
     }
   }
 }

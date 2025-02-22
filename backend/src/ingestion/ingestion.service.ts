@@ -1,59 +1,155 @@
-import { DrizzleDb, InjectDrizzle } from '@database';
-import { File } from '@file/schema/file.schema';
-import { AnthropicService } from '@llm/providers/anthropic.service';
+import { ConfigService } from '@config';
+import {
+  DrizzleDb,
+  FileQueue,
+  InjectDrizzle,
+  FileQueueEntity,
+} from '@database';
 import { Injectable, Logger } from '@nestjs/common';
-import { asc, desc } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
+import pLimit from 'p-limit';
 
-import { EmbeddingService } from './embedding.service';
-import { UnstructuredService } from './unstructured.service';
+import { IngestionQueueService } from './ingestion-queue.service';
+
+interface FileQueueItem extends FileQueueEntity {
+  file: {
+    size: number;
+  };
+}
+
 @Injectable()
 export class IngestionService {
   private readonly logger = new Logger('IngestionService');
+  private isFirstRun = true;
+  private isProcessing = false;
+  private isShuttingDown = false;
+  private readonly fileAbortControllers = new Map<string, AbortController>();
 
   constructor(
-    @InjectDrizzle()
-    private readonly db: DrizzleDb,
-    private readonly unstructuredService: UnstructuredService,
-    private readonly embeddingService: EmbeddingService,
-    private readonly llmService: AnthropicService,
+    private readonly configService: ConfigService,
+    @InjectDrizzle() private readonly db: DrizzleDb,
+    private readonly queue: IngestionQueueService,
   ) {}
 
   async startIngestion(): Promise<void> {
-    this.logger.log(
-      'Starting ingestion... waiting 5 seconds before getting files',
-    );
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (this.isProcessing) {
+      this.logger.warn('Ingestion already in progress');
+      return;
+    }
 
-    this.getFiles();
+    this.isProcessing = true;
+    this.logger.log('Starting ingestion service...');
+
+    try {
+      while (!this.isShuttingDown) {
+        const filesToIngest = await this.queue.getFilesToIngest();
+        if (filesToIngest.length === 0) {
+          this.logger.debug('No files to process, waiting 5 seconds...');
+          await this.sleep(5000);
+          continue;
+        }
+
+        const limit = pLimit(this.configService.ingestion.batchSize);
+        await Promise.all(
+          filesToIngest.map((file) =>
+            limit(async () => {
+              if (this.isShuttingDown) return;
+
+              // Create a new abort controller for this file
+              const fileAbortController = new AbortController();
+              this.fileAbortControllers.set(file.id, fileAbortController);
+
+              try {
+                await this.processFile(file, fileAbortController.signal);
+              } catch (error: unknown) {
+                if (error instanceof Error) {
+                  if (error.name === 'AbortError') {
+                    this.logger.warn(
+                      `Processing of file ${file.id} was aborted`,
+                    );
+                  } else {
+                    this.logger.error(
+                      `Error processing file ${file.id}: ${error.message}`,
+                      error.stack,
+                    );
+                  }
+                }
+              } finally {
+                // Clean up the abort controller
+                this.fileAbortControllers.delete(file.id);
+              }
+            }),
+          ),
+        );
+      }
+    } catch (error) {
+      this.logger.error('Fatal error in ingestion service:', error);
+    } finally {
+      this.isProcessing = false;
+      this.logger.log('Ingestion service stopped.');
+    }
   }
 
-  async getFiles(): Promise<void> {
-    const files = await this.db
-      .select()
-      .from(File)
-      .orderBy(desc(File.createdAt))
-      .limit(1);
+  async onApplicationShutdown(): Promise<void> {
+    this.logger.warn('Application is shutting down. Stopping ingestion...');
+    this.isShuttingDown = true;
 
-    // const file = files[0];
-    // const unstructuredResposne = await this.unstructuredService.partition(file);
+    // Abort all ongoing file processing
+    for (const controller of this.fileAbortControllers.values()) {
+      controller.abort();
+    }
+    this.fileAbortControllers.clear();
+  }
 
-    // console.log(JSON.stringify(unstructuredResposne.elements, null, 2));
+  /**
+   * Abort processing of a specific file
+   * @param fileId The ID of the file to abort processing for
+   * @returns true if the file was being processed and was aborted, false otherwise
+   */
+  async abortFile(fileId: string): Promise<boolean> {
+    const controller = this.fileAbortControllers.get(fileId);
+    if (!controller) {
+      this.logger.warn(`No active processing found for file ${fileId}`);
+      return false;
+    }
 
-    // await this.embeddingService.createEmbeddings(file.id, unstructuredResposne);
+    controller.abort();
+    this.fileAbortControllers.delete(fileId);
+    this.logger.log(`Aborted processing for file ${fileId}`);
+    return true;
+  }
 
-    const query =
-      'Eine trennscharfe Unterscheidung zwischen „Reichsbürgern“ und „Selbstverwaltern“';
-    const similarEmbeds = await this.embeddingService.findSimilarEmbeddings(
-      query,
-    );
+  private async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
-    this.logger.log(
-      `Found ${similarEmbeds.length} similar embeddings for query '${query}'`,
-    );
+  private async processFile(
+    file: FileQueueItem,
+    signal: AbortSignal,
+  ): Promise<void> {
+    if (signal.aborted) throw new Error('AbortError');
 
-    console.log(JSON.stringify(similarEmbeds, null, 2));
+    this.logger.log(`Processing file: ${file.id}`);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(resolve, 4500); // Simulate processing
+        signal.addEventListener('abort', () => {
+          clearTimeout(timeout);
+          reject(new Error('AbortError'));
+        });
+      });
 
-    const context = similarEmbeds.map((embed) => embed.content).join('\n');
-    await this.llmService.sendMessage(context, query);
+      // Update file status after successful processing
+      await this.db
+        .update(FileQueue)
+        .set({
+          isCompleted: true,
+          isProcessing: false,
+          completedAt: new Date(),
+        })
+        .where(inArray(FileQueue.id, [file.id]));
+    } catch (error) {
+      throw error;
+    }
   }
 }

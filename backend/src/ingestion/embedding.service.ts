@@ -5,8 +5,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
 import { PartitionResponse } from 'unstructured-client/sdk/models/operations';
 
-import { EmbeddingEntity } from './schema/embedding.schema';
-
 interface EmbeddingResponse {
   object: 'list';
   data: { object: 'embedding'; embedding: number[]; index: number }[];
@@ -59,7 +57,7 @@ export class EmbeddingService {
       await this.db.delete(schema.Embedding);
 
       this.logger.debug('Preprocessing text');
-      const preprocessedTexts = unstructuredResponse.elements
+      const preprocessedTexts = (unstructuredResponse.elements as any)
         .map((element) => this.preprocessText(element.text))
         .filter((text) => text.length >= 10); // Filter out very short segments
 
@@ -78,14 +76,16 @@ export class EmbeddingService {
       for (const embedding of data.data) {
         await this.db.insert(schema.Embedding).values({
           fileId,
-          content: unstructuredResponse.elements[embedding.index].text,
+          content: (unstructuredResponse.elements as any)[embedding.index].text,
           embedding: embedding.embedding,
         });
       }
 
       this.logger.log(`Inserted ${data.data.length} embeddings`);
-    } catch (error) {
-      this.logger.error(`Error creating embeddings: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error creating embeddings: ${errorMessage}`);
     }
   }
 
@@ -141,8 +141,10 @@ export class EmbeddingService {
         .limit(limit);
 
       return similarEmbeddings;
-    } catch (error) {
-      this.logger.error(`Error finding similar embeddings: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error finding similar embeddings: ${errorMessage}`);
       throw error;
     }
   }

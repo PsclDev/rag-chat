@@ -46,12 +46,12 @@ export class FileUploadService {
         this.moveFileToStorage(file.path, filePath);
         const createdFile = await this.insertToDb(fileId, filePath, file);
         validFiles.push(createdFile);
-      } catch (error) {
+      } catch (error: unknown) {
         this.cleanupOnFailure(file.path, filePath);
 
         rejectedFiles.push({
           file,
-          reason: error.message,
+          reason: error instanceof Error ? error.message : 'Unknown error',
         });
         this.logger.error(error);
       }
@@ -100,8 +100,6 @@ export class FileUploadService {
     path: string,
     meta: Express.Multer.File,
   ): Promise<FileDto> {
-    const fileQueueId = generateId();
-
     const [result]: FileEntity[] = await this.db.transaction(async (tx) => {
       await tx.insert(schema.File).values({
         id,
@@ -112,8 +110,13 @@ export class FileUploadService {
         filename: meta.filename,
       });
 
+      await tx.insert(schema.FileQueue).values({
+        id: generateId(),
+        fileId: id,
+      });
+
       await tx.insert(schema.FileStatus).values({
-        id: fileQueueId,
+        id: generateId(),
         fileId: id,
       });
 
@@ -133,9 +136,11 @@ export class FileUploadService {
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
       }
-    } catch (unlinkError) {
+    } catch (unlinkError: unknown) {
+      const errorMessage =
+        unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
       this.logger.warn(
-        `Failed to delete temporary file ${oldPath}: ${unlinkError.message}`,
+        `Failed to delete temporary file ${oldPath}: ${errorMessage}`,
       );
     }
 
@@ -143,10 +148,10 @@ export class FileUploadService {
       if (fs.existsSync(newPath)) {
         fs.unlinkSync(newPath);
       }
-    } catch (unlinkError) {
-      this.logger.warn(
-        `Failed to delete file ${newPath}: ${unlinkError.message}`,
-      );
+    } catch (unlinkError: unknown) {
+      const errorMessage =
+        unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
+      this.logger.warn(`Failed to delete file ${newPath}: ${errorMessage}`);
     }
   }
 }

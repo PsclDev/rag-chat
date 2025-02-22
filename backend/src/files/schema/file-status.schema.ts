@@ -46,6 +46,6 @@ export function toFileStatusDto(entity: FileStatusEntity): FileStatusDto {
     step: entity.step as FileStatusStep,
     startedAt: entity.startedAt,
     completedAt: entity.completedAt,
-    failed: entity.failed,
+    failed: !!entity.failed,
   };
 }

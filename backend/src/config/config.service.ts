@@ -1,3 +1,6 @@
+import * as crypto from 'crypto';
+import * as os from 'os';
+
 import { Injectable, Logger } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import { ZodError, z } from 'zod';
@@ -8,8 +11,12 @@ const dotenvExpand = require('dotenv-expand');
 dotenvExpand.expand(dotenv.config());
 
 const CONFIG_SCHEMA = z.object({
+  nodeId: z.string().length(8),
+
   nodeEnv: z.string(),
+  port: z.number(),
   isDevMode: z.boolean(),
+  printConfig: z.boolean(),
 
   database: z.object({
     host: z.string().min(1),
@@ -24,6 +31,7 @@ const CONFIG_SCHEMA = z.object({
   }),
 
   ingestion: z.object({
+    batchSize: z.number().optional(),
     voyageai: z.object({
       apiKey: z.string().min(1),
     }),
@@ -45,11 +53,14 @@ export class ConfigService {
   private readonly logger = new Logger('ConfigService');
 
   // Config
+  nodeId = this.getNodeId();
   nodeEnv = process.env.NODE_ENV || 'production';
+  port = Number(process.env.APP_PORT) || 3010;
   isDevMode =
     process.env.NODE_ENV === 'development' ||
     process.env.NODE_ENV === 'develop' ||
     process.env.NODE_ENV === 'dev';
+  printConfig = this.toBool(process.env.APP_PRINT_CONFIG);
 
   database = {
     host: process.env.APP_DB_HOST || '',
@@ -64,6 +75,7 @@ export class ConfigService {
   };
 
   ingestion = {
+    batchSize: Number(process.env.INGESTION_BATCH_SIZE) || 3,
     voyageai: {
       apiKey: process.env.VOYAGEAI_API_KEY || '',
     },
@@ -81,7 +93,15 @@ export class ConfigService {
 
   // ===
 
-  toBool(input: string | undefined): boolean {
+  private getNodeId(): string {
+    return crypto
+      .createHash('sha256')
+      .update(os.hostname())
+      .digest('hex')
+      .slice(0, 8);
+  }
+
+  private toBool(input: string | undefined): boolean {
     if (!input) return false;
     return [true, 'true', '1', 1, 'yes', 'y'].includes(input.toLowerCase());
   }
