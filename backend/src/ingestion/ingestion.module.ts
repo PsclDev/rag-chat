@@ -25,7 +25,7 @@ export class IngestionModule
   constructor(private readonly ingestionService: IngestionService) {}
 
   async onApplicationBootstrap() {
-    await this.ingestionService.startIngestion();
+    this.ingestionService.startIngestion();
   }
 
   async onApplicationShutdown() {
