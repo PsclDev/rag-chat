@@ -5,10 +5,8 @@ import { FileEntity } from '@database';
 import { Injectable, Logger } from '@nestjs/common';
 import { UnstructuredClient } from 'unstructured-client';
 import { PartitionResponse } from 'unstructured-client/sdk/models/operations';
-import {
-  ChunkingStrategy,
-  Strategy,
-} from 'unstructured-client/sdk/models/shared';
+
+import { IngestionOptionsVo } from './vo/ingestion.vo';
 
 @Injectable()
 export class UnstructuredService {
@@ -35,26 +33,34 @@ export class UnstructuredService {
     );
   }
 
-  async partition(file: FileEntity): Promise<PartitionResponse> {
+  async partition(
+    file: FileEntity,
+    options: IngestionOptionsVo,
+    abortSignal: AbortSignal,
+  ): Promise<PartitionResponse> {
+    //TODO: Abort signal
     try {
       const startTime = Date.now();
-      this.logger.log(`Starting partition for file: ${file.originalname}`);
+      this.logger.debug(`Starting partition for file: ${file.originalname}`);
       const fileData = fs.readFileSync(file.path);
-      this.logger.log(`file data found? ${fileData !== undefined}`);
+      this.logger.debug(`file data found? ${fileData !== undefined}`);
       const response = await this.unstructured.general.partition({
         partitionParameters: {
           files: {
             content: fileData,
             fileName: file.originalname,
           },
-          chunkingStrategy: ChunkingStrategy.ByTitle,
-          strategy: Strategy.HiRes,
-          splitPdfPage: true,
-          splitPdfConcurrencyLevel: 15,
-          maxCharacters: 100000,
-          combineUnderNChars: 3500,
-          newAfterNChars: 3500,
-          extractImageBlockTypes: ['Image', 'Table'],
+          chunkingStrategy: options.chunkingStrategy,
+          strategy: options.strategy,
+          splitPdfPage: options.splitPdfPage ?? false,
+          splitPdfConcurrencyLevel: options.splitPdfConcurrencyLevel ?? 15,
+          maxCharacters: options.maxCharacters ?? 100000,
+          combineUnderNChars: options.combineUnderNChars ?? 3500,
+          newAfterNChars: options.newAfterNChars ?? 3500,
+          extractImageBlockTypes: options.extractImageBlockTypes ?? [
+            'Image',
+            'Table',
+          ],
         },
       });
       this.printProcessingTime(startTime, file.originalname);

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { AnthropicService } from './providers/anthropic.service';
+import { AnthropicService } from './models/anthropic.service';
 
 @Module({
   providers: [AnthropicService],
-  exports: [AnthropicService],
+  exports: [],
 })
 export class LlmModule {}

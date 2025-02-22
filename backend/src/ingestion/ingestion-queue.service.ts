@@ -6,13 +6,7 @@ import {
   FileQueueEntity,
 } from '@database';
 import { Injectable, Logger } from '@nestjs/common';
-import { inArray } from 'drizzle-orm';
-
-export interface FileQueueItem extends FileQueueEntity {
-  file: {
-    size: number;
-  };
-}
+import { inArray, and, eq, isNull } from 'drizzle-orm';
 
 @Injectable()
 export class IngestionQueueService {
@@ -24,21 +18,23 @@ export class IngestionQueueService {
     @InjectDrizzle() private readonly db: DrizzleDb,
   ) {}
 
-  getFilesToIngest(): Promise<FileQueueItem[]> {
+  getFilesToIngest(): Promise<FileQueueEntity[]> {
     return this.db.transaction(async (trx) => {
       const whereCondition = this.isFirstRun
-        ? `fq.is_completed = false AND fq.is_processing = true AND fq.node_id = '${this.configService.nodeId}'`
-        : 'fq.is_completed = false AND fq.node_id IS NULL';
+        ? and(
+            eq(FileQueue.isCompleted, false),
+            eq(FileQueue.isProcessing, true),
+            eq(FileQueue.nodeId, this.configService.nodeId),
+          )
+        : and(eq(FileQueue.isCompleted, false), isNull(FileQueue.nodeId));
 
-      const { rows: files } = await trx.execute(
-        `SELECT fq.id, fq.file_id, fq.node_id, fq.is_processing, fq.is_completed, fq.enqueued_at, fq.completed_at, f.size
-      FROM file_queue fq
-      INNER JOIN file f ON fq.file_id = f.id
-      WHERE ${whereCondition}
-      ORDER BY fq.enqueued_at ASC
-      FOR UPDATE SKIP LOCKED
-      LIMIT ${this.configService.ingestion.batchSize}`,
-      );
+      const files = await trx
+        .select()
+        .from(FileQueue)
+        .where(whereCondition)
+        .orderBy(FileQueue.enqueuedAt)
+        .limit(this.configService.ingestion.batchSize)
+        .for('update', { skipLocked: true });
 
       if (this.isFirstRun) {
         this.isFirstRun = false;

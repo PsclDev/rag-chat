@@ -1,22 +1,22 @@
-import { LlmModule } from '@llm/llm.module';
 import {
   Module,
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from '@nestjs/common';
 
-import { EmbeddingService } from './embedding.service';
 import { IngestionQueueService } from './ingestion-queue.service';
 import { IngestionService } from './ingestion.service';
+import { PdfProcessor, ProcessorFactory } from './processors';
 import { UnstructuredService } from './unstructured.service';
 
 @Module({
-  imports: [LlmModule],
+  imports: [],
   providers: [
     IngestionService,
     UnstructuredService,
-    EmbeddingService,
     IngestionQueueService,
+    PdfProcessor,
+    ProcessorFactory,
   ],
 })
 export class IngestionModule

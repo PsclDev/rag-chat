@@ -24,7 +24,7 @@ export const FileRelations = relations(File, ({ many }) => ({
 }));
 
 export type FileEntity = typeof File.$inferSelect & {
-  status: FileStatusEntity[];
+  status?: FileStatusEntity[];
 };
 
 export function toFileDto(entity: FileEntity): FileDto {
@@ -34,7 +34,7 @@ export function toFileDto(entity: FileEntity): FileDto {
     mimetype: entity.mimetype,
     filename: entity.filename,
     size: entity.size,
-    status: entity.status.map(toFileStatusDto),
+    status: entity.status?.map(toFileStatusDto) || [],
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   };

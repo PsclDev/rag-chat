@@ -42,6 +42,9 @@ const CONFIG_SCHEMA = z.object({
   }),
 
   llm: z.object({
+    embedding: z.object({
+      adapter: z.enum(['voyage', 'sentence-transformer']),
+    }),
     anthropic: z.object({
       apiKey: z.string().min(1),
     }),
@@ -75,7 +78,7 @@ export class ConfigService {
   };
 
   ingestion = {
-    batchSize: Number(process.env.INGESTION_BATCH_SIZE) || 3,
+    batchSize: Number(process.env.INGESTION_BATCH_SIZE) || 1,
     voyageai: {
       apiKey: process.env.VOYAGEAI_API_KEY || '',
     },
@@ -86,6 +89,9 @@ export class ConfigService {
   };
 
   llm = {
+    embedding: {
+      adapter: process.env.LLM_EMBEDDING_ADAPTER || 'voyage',
+    },
     anthropic: {
       apiKey: process.env.ANTHROPIC_API_KEY || '',
     },
