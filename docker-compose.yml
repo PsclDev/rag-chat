@@ -6,3 +6,24 @@ services:
       - 5001:8000
     environment:
       UNSTRUCTURED_API_KEY: superSecret
+
+  langfuse:
+    restart: always
+    image: ghcr.io/langfuse/langfuse:2.93.4
+    ports:
+      - 5002:3000
+    environment:
+      DATABASE_URL: postgresql://dev:development@10.0.0.10:5433/deadrag?schema=langfuse
+      NEXTAUTH_URL: http://localhost:5002
+      NEXTAUTH_SECRET: superSecret
+      SALT: superSecret
+      TELEMETRY_ENABLED: 'false'
+      LANGFUSE_INIT_ORG_ID: 'b847bcfe-e318-48ac-836b-b87d1a2df4ae'
+      LANGFUSE_INIT_ORG_NAME: 'DeadRAG'
+      LANGFUSE_INIT_PROJECT_ID: '0b1409e7-e716-4d41-82ed-b84a8c3f0e5f'
+      LANGFUSE_INIT_PROJECT_NAME: 'Default Project'
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: 'pk-lf-bd5a97e0-d0df-4c76-a689-20476ec1dc08'
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: 'sk-lf-95c7cac4-58f4-4897-b138-6636329439e4'
+      LANGFUSE_INIT_USER_NAME: 'DeadRAG Admin'
+      LANGFUSE_INIT_USER_EMAIL: 'admin@deadrag.io'
+      LANGFUSE_INIT_USER_PASSWORD: 'admin@deadrag.io'
