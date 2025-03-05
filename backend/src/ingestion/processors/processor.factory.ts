@@ -1,5 +1,6 @@
 import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
+import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
 import { Injectable } from '@nestjs/common';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
@@ -15,12 +16,19 @@ export class ProcessorFactory {
   constructor(
     private readonly configService: ConfigService,
     @InjectDrizzle() private readonly db: DrizzleDb,
+    private readonly ingestionStatusService: IngestionStatusService,
     private readonly unstructuredService: UnstructuredService,
     private readonly embeddingService: EmbeddingService,
   ) {
     this.instances = this.processors.map(
       (Processor) =>
-        new Processor(configService, db, unstructuredService, embeddingService),
+        new Processor(
+          configService,
+          db,
+          ingestionStatusService,
+          unstructuredService,
+          embeddingService,
+        ),
     );
   }
 
@@ -50,6 +58,7 @@ export class ProcessorFactory {
     return new processor(
       this.configService,
       this.db,
+      this.ingestionStatusService,
       this.unstructuredService,
       this.embeddingService,
     );

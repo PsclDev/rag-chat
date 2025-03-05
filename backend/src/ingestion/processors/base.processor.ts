@@ -1,35 +1,67 @@
 import { ConfigService } from '@config';
-import { DrizzleDb, FileEntity, InjectDrizzle } from '@database';
+import { DrizzleDb, FileQueue, FileStatusStep, InjectDrizzle } from '@database';
+import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
+import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
 import { Logger } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 
 export abstract class BaseProcessor {
   protected readonly logger = new Logger('BaseProcessor');
   abstract supportedMimetypes: string[];
   abstract specificProcess(
-    file: FileEntity,
+    ingestion: FileIngestionVo,
     signal: AbortSignal,
   ): Promise<void>;
 
   constructor(
     public readonly configService: ConfigService,
     @InjectDrizzle() public readonly db: DrizzleDb,
+    public readonly ingestionStatusService: IngestionStatusService,
     public readonly unstructuredService: UnstructuredService,
     public readonly embeddingService: EmbeddingService,
   ) {}
 
-  async process(file: FileEntity, abortSignal: AbortSignal): Promise<void> {
-    this.logger.debug(`Starting processing file: ${file.id}`);
+  async process(
+    ingestion: FileIngestionVo,
+    abortSignal: AbortSignal,
+  ): Promise<void> {
+    this.logger.debug(`Starting processing file: ${ingestion.file.id}`);
     try {
-      await this.specificProcess(file, abortSignal);
+      await this.ingestionStatusService.setNewStatusForFile(
+        ingestion.file.id,
+        FileStatusStep.PROCESSING,
+      );
+
+      await this.specificProcess(ingestion, abortSignal);
+
+      await this.ingestionStatusService.setNewStatusForFile(
+        ingestion.file.id,
+        FileStatusStep.COMPLETED,
+        true,
+      );
+      await this.db
+        .update(FileQueue)
+        .set({
+          isCompleted: true,
+          isProcessing: false,
+          completedAt: new Date(),
+        })
+        .where(eq(FileQueue.id, ingestion.queue.id));
+      this.logger.debug(`Finished processing file: ${ingestion.file.id}`);
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        this.logger.warn(`Processing of file ${file.id} was aborted`);
+        this.logger.warn(`Processing of file ${ingestion.file.id} was aborted`);
         return;
       }
 
-      this.logger.error(`Error processing file: ${file.id}`, error);
+      this.ingestionStatusService.setNewStatusForFile(
+        ingestion.file.id,
+        FileStatusStep.FAILED,
+      );
+
+      this.logger.error(`Error processing file: ${ingestion.file.id}`, error);
       throw error;
     }
   }

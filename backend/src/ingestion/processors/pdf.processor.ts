@@ -1,8 +1,9 @@
 import { ConfigService } from '@config';
-import { DrizzleDb, FileEntity, FileQueue, InjectDrizzle } from '@database';
+import { DrizzleDb, InjectDrizzle } from '@database';
+import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
+import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
 import { Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 import {
   ChunkingStrategy,
@@ -18,21 +19,31 @@ export class PdfProcessor extends BaseProcessor {
   constructor(
     readonly configService: ConfigService,
     @InjectDrizzle() readonly db: DrizzleDb,
+    readonly ingestionStatusService: IngestionStatusService,
     readonly unstructuredService: UnstructuredService,
     readonly embeddingService: EmbeddingService,
   ) {
-    super(configService, db, unstructuredService, embeddingService);
+    super(
+      configService,
+      db,
+      ingestionStatusService,
+      unstructuredService,
+      embeddingService,
+    );
   }
 
   async specificProcess(
-    file: FileEntity,
+    ingestion: FileIngestionVo,
     abortSignal: AbortSignal,
   ): Promise<void> {
-    this.logger.debug('Deleting all existing embeddings for file', file.id);
-    await this.embeddingService.deleteAllEmbeddings(file.id);
+    this.logger.debug(
+      'Deleting all existing embeddings for file',
+      ingestion.file.id,
+    );
+    await this.embeddingService.deleteAllEmbeddings(ingestion.file.id);
 
     const unstructuredRes = await this.unstructuredService.partition(
-      file,
+      ingestion.file,
       {
         chunkingStrategy: ChunkingStrategy.ByTitle,
         strategy: Strategy.Fast,
@@ -52,18 +63,9 @@ export class PdfProcessor extends BaseProcessor {
     );
 
     await this.embeddingService.createEmbeddings(
-      file.id,
+      ingestion.file.id,
       processedContent,
       abortSignal,
     );
-
-    await this.db
-      .update(FileQueue)
-      .set({
-        isCompleted: true,
-        isProcessing: false,
-        completedAt: new Date(),
-      })
-      .where(eq(FileQueue.id, file.id));
   }
 }

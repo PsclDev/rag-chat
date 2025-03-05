@@ -1,3 +1,4 @@
+import { FileEntity, FileQueueEntity } from '@database';
 import {
   ChunkingStrategy,
   Strategy,
@@ -12,4 +13,9 @@ export interface IngestionOptionsVo {
   combineUnderNChars?: number;
   newAfterNChars?: number;
   extractImageBlockTypes?: string[];
+}
+
+export interface FileIngestionVo {
+  file: FileEntity;
+  queue: FileQueueEntity;
 }

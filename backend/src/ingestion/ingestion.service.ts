@@ -1,5 +1,5 @@
 import { ConfigService } from '@config';
-import { DrizzleDb, File, FileEntity, InjectDrizzle } from '@database';
+import { DrizzleDb, File, InjectDrizzle } from '@database';
 import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import pLimit from 'p-limit';
@@ -50,7 +50,6 @@ export class IngestionService {
               this.fileAbortControllers.set(queuedFile.id, fileAbortController);
 
               try {
-                console.log('queuedFile', queuedFile);
                 const file = await this.db.query.File.findFirst({
                   where: eq(File.id, queuedFile.fileId),
                 });
@@ -74,7 +73,10 @@ export class IngestionService {
                   return;
                 }
 
-                await processor.process(file, fileAbortController.signal);
+                await processor.process(
+                  { queue: queuedFile, file },
+                  fileAbortController.signal,
+                );
               } catch (error: unknown) {
                 if (error instanceof Error) {
                   if (error.name === 'AbortError') {

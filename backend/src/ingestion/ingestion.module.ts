@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { IngestionQueueService } from './ingestion-queue.service';
+import { IngestionStatusService } from './ingestion-status.service';
 import { IngestionService } from './ingestion.service';
 import { PdfProcessor, ProcessorFactory } from './processors';
 import { UnstructuredService } from './unstructured.service';
@@ -15,6 +16,7 @@ import { UnstructuredService } from './unstructured.service';
     IngestionService,
     UnstructuredService,
     IngestionQueueService,
+    IngestionStatusService,
     PdfProcessor,
     ProcessorFactory,
   ],
