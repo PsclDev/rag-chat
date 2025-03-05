@@ -6,7 +6,6 @@ import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
 import { Logger } from '@nestjs/common';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 import {
-  ChunkingStrategy,
   Strategy,
 } from 'unstructured-client/sdk/models/shared';
 
@@ -45,7 +44,7 @@ export class PdfProcessor extends BaseProcessor {
     const unstructuredRes = await this.unstructuredService.partition(
       ingestion.file,
       {
-        chunkingStrategy: ChunkingStrategy.ByTitle,
+        chunkingStrategy: 'by_title',
         strategy: Strategy.Fast,
         splitPdfPage: true,
         splitPdfConcurrencyLevel: 15,

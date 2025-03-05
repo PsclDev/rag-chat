@@ -1,11 +1,10 @@
 import { FileEntity, FileQueueEntity } from '@database';
 import {
-  ChunkingStrategy,
   Strategy,
 } from 'unstructured-client/sdk/models/shared';
 
 export interface IngestionOptionsVo {
-  chunkingStrategy: ChunkingStrategy;
+  chunkingStrategy: 'by_title';
   strategy: Strategy;
   splitPdfPage?: boolean;
   splitPdfConcurrencyLevel?: number;
