@@ -12,7 +12,10 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
-  importPlugin.flatConfigs?.recommended,
+  // @ts-ignore
+  importPlugin.flatConfigs.recommended,
+  // @ts-ignore
+  importPlugin.flatConfigs.typescript,
   {
     languageOptions: {
       globals: {
@@ -26,6 +29,11 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    settings: {
+      'import/resolver': {
+        typescript: {}
+      }
+    },
   },
   {
     rules: {
@@ -33,6 +41,7 @@ export default tseslint.config(
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
       'import/order': [
         'error',
         {
