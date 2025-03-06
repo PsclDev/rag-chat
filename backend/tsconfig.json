@@ -29,6 +29,8 @@
       "@ingestion/*": ["ingestion/*"],
       "@llm": ["llm"],
       "@llm/*": ["llm/*"],
+      "@shared": ["shared"],
+      "@shared/*": ["shared/*"],
     },
   }
 }
