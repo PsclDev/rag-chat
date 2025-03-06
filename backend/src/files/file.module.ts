@@ -10,10 +10,19 @@ import { FileService } from './file.service';
 @Module({
   imports: [
     MulterModule.register({
+      fileFilter: (_, file, cb) => {
+        file.originalname = Buffer.from(file.originalname, 'latin1').toString(
+          'utf8',
+        );
+        cb(null, true);
+      },
       storage: diskStorage({
         destination: './data/temp',
         filename: (_, file, cb) => {
-          const filename = `${Date.now()}-${file.originalname}`;
+          const decodedName = Buffer.from(file.originalname, 'latin1').toString(
+            'utf8',
+          );
+          const filename = `${Date.now()}-${decodedName}`;
           cb(null, filename);
         },
       }),

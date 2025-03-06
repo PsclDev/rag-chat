@@ -36,7 +36,7 @@ export class FileController {
     const stream = createReadStream(file.path);
     res.set({
       'Content-Type': file.mimetype,
-      'Content-Disposition': `attachment; filename="${file.originalname}"`,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(file.originalname)}`,
       'Content-Length': file.size.toString(),
     });
     return new StreamableFile(stream);
