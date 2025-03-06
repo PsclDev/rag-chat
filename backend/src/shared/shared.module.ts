@@ -1,15 +1,22 @@
 import { ConfigService } from '@config';
-import { DrizzleDb } from '@database';
+import { DrizzleDb, Embedding } from '@database';
 import { Global, Logger, Module } from '@nestjs/common';
 import { PG_PROVIDER } from 'app.definition';
 
 import { EmbeddingService } from './embedding/embedding.service';
 import { SentenceTransformerAdapterService } from './embedding/sentence-transformer.adapter';
 import { VoyageAdapterService } from './embedding/voyage.adapter';
+import { NotificationService } from './notification/notification.service';
+import { NotificationGateway } from './notification/notification.gateway';
+
+const provideAndExport = [
+  NotificationService
+]
 
 @Global()
 @Module({
   providers: [
+    NotificationGateway,
     {
       provide: EmbeddingService,
       inject: [ConfigService, PG_PROVIDER],
@@ -31,7 +38,8 @@ import { VoyageAdapterService } from './embedding/voyage.adapter';
         }
       },
     },
+    ...provideAndExport
   ],
-  exports: [EmbeddingService],
+  exports: [EmbeddingService, ...provideAndExport],
 })
-export class SharedModule {}
+export class SharedModule { }

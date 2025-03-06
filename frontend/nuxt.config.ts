@@ -6,7 +6,9 @@ export default defineNuxtConfig({
 	modules: ["@nuxt/ui", "@pinia/nuxt"],
 	runtimeConfig: {
 		public: {
-			apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL
+			apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
+			apiBaseUrlWs: process.env.NUXT_PUBLIC_API_BASE_URL_WS
 		}
-	}
+	},
+	plugins: ["~/plugins/socket.io"]
 });

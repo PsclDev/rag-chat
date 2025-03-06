@@ -9,6 +9,9 @@
 </template>
 
 <script setup lang="ts">
+const notificationSocket = useNotificationSocket();
+notificationSocket.connect();
+
 useHead({
   title: 'KI-Run\'s RAG',
 })
