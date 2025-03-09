@@ -1,27 +1,22 @@
 import * as fs from 'fs';
 
 import { Injectable, Logger } from '@nestjs/common';
-import { UnstructuredClient } from 'unstructured-client';
-import { PartitionResponse } from 'unstructured-client/sdk/models/operations';
+import axios from 'axios';
 
 import { ConfigService } from '@config';
 import { FileEntity } from '@database';
 
-import { IngestionOptionsVo } from './vo/ingestion.vo';
+import {
+  getIngestionOptions,
+  IngestionOptionsVo,
+  UnstructuredPartitionResponse,
+} from './vo/ingestion.vo';
 
 @Injectable()
 export class UnstructuredService {
   private readonly logger: Logger = new Logger('Unstructured Service');
-  private readonly unstructured: UnstructuredClient;
 
-  constructor(private readonly config: ConfigService) {
-    this.unstructured = new UnstructuredClient({
-      serverURL: this.config.ingestion.unstructured.serverURL,
-      security: {
-        apiKeyAuth: this.config.ingestion.unstructured.apiKey,
-      },
-    });
-  }
+  constructor(private readonly config: ConfigService) {}
 
   private printProcessingTime(startTime: number, filename: string): void {
     const duration = Date.now() - startTime;
@@ -38,42 +33,40 @@ export class UnstructuredService {
     file: FileEntity,
     options: IngestionOptionsVo,
     abortSignal: AbortSignal,
-  ): Promise<PartitionResponse> {
-    //TODO: Abort signal
+  ): Promise<UnstructuredPartitionResponse[]> {
     try {
       const startTime = Date.now();
       this.logger.debug(`Starting partition for file: ${file.originalname}`);
       const fileData = fs.readFileSync(file.path);
       this.logger.debug(`file data found? ${fileData !== undefined}`);
-      const response = await this.unstructured.general.partition({
-        partitionParameters: {
-          files: {
-            content: fileData,
-            fileName: file.originalname,
+
+      const formdata = new FormData();
+      formdata.append('files', new Blob([fileData]), file.originalname);
+      for (const [key, value] of Object.entries(getIngestionOptions(options))) {
+        const valArr = Array.isArray(value) ? value : [value];
+        valArr.forEach((val) => formdata.append(key, String(val)));
+      }
+
+      console.log(formdata);
+      const { data } = await axios.post<UnstructuredPartitionResponse[]>(
+        `${this.config.ingestion.unstructured.serverURL}/general/v0/general`,
+        formdata,
+        {
+          headers: {
+            Accept: 'application/json',
+            'unstructured-api-key': this.config.ingestion.unstructured.apiKey,
           },
-          chunkingStrategy: options.chunkingStrategy,
-          strategy: options.strategy,
-          splitPdfPage: options.splitPdfPage ?? false,
-          splitPdfConcurrencyLevel: options.splitPdfConcurrencyLevel ?? 15,
-          maxCharacters: options.maxCharacters ?? 100000,
-          combineUnderNChars: options.combineUnderNChars ?? 3500,
-          newAfterNChars: options.newAfterNChars ?? 3500,
-          extractImageBlockTypes: options.extractImageBlockTypes ?? [
-            'Image',
-            'Table',
-          ],
+          signal: abortSignal,
         },
-      });
+      );
+
       this.printProcessingTime(startTime, file.originalname);
 
-      const { elements, ...rest } = response;
-
       this.logger.log('Response', {
-        ...rest,
-        elementsCount: elements?.length,
+        elementsCount: data.length,
       });
 
-      return response;
+      return data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';

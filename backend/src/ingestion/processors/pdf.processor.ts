@@ -44,20 +44,20 @@ export class PdfProcessor extends BaseProcessor {
       ingestion.file,
       {
         chunkingStrategy: 'by_title',
-        strategy: Strategy.Fast,
+        strategy: Strategy.HiRes,
         splitPdfPage: true,
         splitPdfConcurrencyLevel: 15,
       },
       abortSignal,
     );
 
-    if (!unstructuredRes.elements) {
+    if (!unstructuredRes.length) {
       this.logger.warn('No elements found in unstructured response');
       return;
     }
 
-    const processedContent = unstructuredRes.elements.map((element) =>
-      this.preprocessText(element.text as string),
+    const processedContent = unstructuredRes.map((element) =>
+      this.preprocessText(element.text),
     );
 
     await this.embeddingService.createEmbeddings(
