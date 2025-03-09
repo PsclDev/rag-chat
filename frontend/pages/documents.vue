@@ -94,6 +94,9 @@ const gridColumns = computed(() => {
 })
 
 const triggerFileInput = () => {
+    if (fileInput.value) {
+        fileInput.value.value = ''
+    }
     fileInput.value?.click()
 }
 
@@ -115,6 +118,7 @@ const handleDrop = (event: DragEvent) => {
 const handleFiles = (files: File[]) => {
     selectedFiles.value = files
     showUploadModal.value = true
+    console.log('files', files, 'selectedFiles', selectedFiles.value, 'showUploadModal', showUploadModal.value);
 }
 
 const handleUploadComplete = () => {

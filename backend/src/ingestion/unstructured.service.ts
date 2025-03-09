@@ -47,7 +47,6 @@ export class UnstructuredService {
         valArr.forEach((val) => formdata.append(key, String(val)));
       }
 
-      console.log(formdata);
       const { data } = await axios.post<UnstructuredPartitionResponse[]>(
         `${this.config.ingestion.unstructured.serverURL}/general/v0/general`,
         formdata,
