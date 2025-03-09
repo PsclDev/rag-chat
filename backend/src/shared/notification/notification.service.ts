@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 
+import { FileStatusEntity, toFileStatusDto } from '@database';
+
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger('NotificationService');
@@ -23,12 +25,11 @@ export class NotificationService {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  emitFileStatusUpdate(fileId: string, status: string) {
+  emitFileStatusUpdate(fileId: string, status: FileStatusEntity) {
     this.socketServer.emit('fileStatusUpdate', {
       fileId,
-      status,
-      timestamp: new Date().toISOString(),
+      status: toFileStatusDto(status),
     });
-    this.logger.log(`Emitted status update for file ${fileId}: ${status}`);
+    this.logger.log(`Emitted status update for file ${fileId}: ${status.step}`);
   }
 }

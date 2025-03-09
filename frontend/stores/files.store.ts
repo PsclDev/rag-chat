@@ -1,16 +1,17 @@
-import type { FileDto, FileUploadResultDto, FileStatusStep } from '../types/file.types';
+import type { FileDto, FileUploadResultDto, FileStatusStep, FileStatusDto } from '../types/file.types';
 
 export const useFilesStore = defineStore("files", () => {
 	const { socket } = useNotificationSocket();
 	const baseUrl = useRuntimeConfig().public.apiBaseUrl;
 	const files = ref<FileDto[]>([]);
-
-	 socket.on('notification', (data: any) => {
-	 			console.log(data);
-	 });
 	
-	socket.on('fileStatusUpdate', (data: any) => {
-		console.log(data);
+	socket.on('fileStatusUpdate', (data: { fileId: string, status: FileStatusDto }) => {
+		const fileIdx = files.value.findIndex((f) => f.id === data.fileId);
+		if (fileIdx === -1) { return; }
+
+		const file = files.value[fileIdx];
+		file.status.push(data.status);
+		files.value[fileIdx] = file;
 	});
 
 	async function getFiles() {

@@ -15,13 +15,6 @@ notificationSocket.connect();
 useHead({
   title: 'KI-Run\'s RAG',
 })
-
-onMounted(() => {
-  const route = useRoute()
-  if (route.path === '/') {
-    navigateTo('/chat')
-  }
-})
 </script>
 
 <style>
