@@ -1,8 +1,9 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
+
 import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as schema from '@database';
-import { Injectable, Logger } from '@nestjs/common';
-import { cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
 
 import { EmbeddingService } from './embedding.service';
 

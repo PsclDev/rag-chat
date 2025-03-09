@@ -1,8 +1,17 @@
 import type { FileDto, FileUploadResultDto, FileStatusStep } from '../types/file.types';
 
 export const useFilesStore = defineStore("files", () => {
+	const { socket } = useNotificationSocket();
 	const baseUrl = useRuntimeConfig().public.apiBaseUrl;
 	const files = ref<FileDto[]>([]);
+
+	 socket.on('notification', (data: any) => {
+	 			console.log(data);
+	 });
+	
+	socket.on('fileStatusUpdate', (data: any) => {
+		console.log(data);
+	});
 
 	async function getFiles() {
 		try {

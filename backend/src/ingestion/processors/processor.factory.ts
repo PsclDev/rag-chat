@@ -1,8 +1,9 @@
+import { Injectable } from '@nestjs/common';
+
 import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
-import { Injectable } from '@nestjs/common';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 
 import { BaseProcessor } from './base.processor';
@@ -52,7 +53,7 @@ export class ProcessorFactory {
     );
 
     if (!processor) {
-      throw new Error(`Processor ${matchingProcessor} not found`);
+      throw new Error(`Instance of processor for ${mimetype} not found`);
     }
 
     return new processor(

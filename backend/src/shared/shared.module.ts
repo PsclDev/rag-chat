@@ -1,17 +1,16 @@
-import { ConfigService } from '@config';
-import { DrizzleDb, Embedding } from '@database';
 import { Global, Logger, Module } from '@nestjs/common';
+
+import { ConfigService } from '@config';
+import { DrizzleDb } from '@database';
 import { PG_PROVIDER } from 'app.definition';
 
 import { EmbeddingService } from './embedding/embedding.service';
 import { SentenceTransformerAdapterService } from './embedding/sentence-transformer.adapter';
 import { VoyageAdapterService } from './embedding/voyage.adapter';
-import { NotificationService } from './notification/notification.service';
 import { NotificationGateway } from './notification/notification.gateway';
+import { NotificationService } from './notification/notification.service';
 
-const provideAndExport = [
-  NotificationService
-]
+const provideAndExport = [NotificationService];
 
 @Global()
 @Module({
@@ -38,8 +37,8 @@ const provideAndExport = [
         }
       },
     },
-    ...provideAndExport
+    ...provideAndExport,
   ],
   exports: [EmbeddingService, ...provideAndExport],
 })
-export class SharedModule { }
+export class SharedModule {}

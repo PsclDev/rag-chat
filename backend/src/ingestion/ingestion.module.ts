@@ -26,7 +26,7 @@ export class IngestionModule
 {
   constructor(private readonly ingestionService: IngestionService) {}
 
-  async onApplicationBootstrap() {
+  onApplicationBootstrap() {
     this.ingestionService.startIngestion();
   }
 

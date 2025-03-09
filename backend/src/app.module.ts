@@ -1,11 +1,12 @@
+import { DrizzlePGModule } from '@knaadh/nestjs-drizzle-pg';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+
 import { ConfigService } from '@config';
 import { ConfigModule } from '@config/config.module';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as DRIZZLE_SCHEMA from '@database/drizzle.schema';
-import { DrizzlePGModule } from '@knaadh/nestjs-drizzle-pg';
 import { LlmModule } from '@llm/llm.module';
-import { Logger, Module, OnModuleInit } from '@nestjs/common';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { IngestionModule } from 'ingestion/ingestion.module';
 import { SharedModule } from 'shared/shared.module';
 

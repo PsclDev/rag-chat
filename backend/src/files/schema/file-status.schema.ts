@@ -1,6 +1,7 @@
-import { FileStatusDto } from '@file/dto/file.dto';
 import { relations } from 'drizzle-orm';
 import { pgTable, text, timestamp, boolean, unique } from 'drizzle-orm/pg-core';
+
+import { FileStatusDto } from '@file/dto/file.dto';
 
 import { File } from './file.schema';
 

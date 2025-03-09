@@ -1,13 +1,12 @@
+import { Logger } from '@nestjs/common';
+import { Strategy } from 'unstructured-client/sdk/models/shared';
+
 import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
 import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
-import { Logger } from '@nestjs/common';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
-import {
-  Strategy,
-} from 'unstructured-client/sdk/models/shared';
 
 import { BaseProcessor } from './base.processor';
 
@@ -58,7 +57,7 @@ export class PdfProcessor extends BaseProcessor {
     }
 
     const processedContent = unstructuredRes.elements.map((element) =>
-      this.preprocessText(element.text),
+      this.preprocessText(element.text as string),
     );
 
     await this.embeddingService.createEmbeddings(

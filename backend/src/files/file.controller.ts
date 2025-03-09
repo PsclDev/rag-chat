@@ -1,6 +1,5 @@
 import { createReadStream } from 'fs';
 
-import { toFileDto } from '@database';
 import {
   Controller,
   Delete,
@@ -11,6 +10,8 @@ import {
   Res,
   StreamableFile,
 } from '@nestjs/common';
+
+import { toFileDto } from '@database';
 
 import { FileDto } from './dto/file.dto';
 import { FileService } from './file.service';

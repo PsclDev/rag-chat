@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ConfigService } from '@config';
 import { Injectable, Logger } from '@nestjs/common';
+
+import { ConfigService } from '@config';
 
 @Injectable()
 export class AnthropicService {

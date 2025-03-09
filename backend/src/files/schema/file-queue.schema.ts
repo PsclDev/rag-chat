@@ -1,4 +1,3 @@
-import { File } from '@file/schema/file.schema';
 import {
   pgTable,
   timestamp,
@@ -6,6 +5,8 @@ import {
   boolean,
   text,
 } from 'drizzle-orm/pg-core';
+
+import { File } from '@file/schema/file.schema';
 
 export const FileQueue = pgTable('file_queue', {
   id: text('id').primaryKey(),

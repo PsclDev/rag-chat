@@ -1,10 +1,11 @@
 import * as fs from 'fs';
 
-import { ConfigService } from '@config';
-import { FileEntity } from '@database';
 import { Injectable, Logger } from '@nestjs/common';
 import { UnstructuredClient } from 'unstructured-client';
 import { PartitionResponse } from 'unstructured-client/sdk/models/operations';
+
+import { ConfigService } from '@config';
+import { FileEntity } from '@database';
 
 import { IngestionOptionsVo } from './vo/ingestion.vo';
 

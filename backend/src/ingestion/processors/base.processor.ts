@@ -1,10 +1,11 @@
+import { Logger } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+
 import { ConfigService } from '@config';
 import { DrizzleDb, FileQueue, FileStatusStep, InjectDrizzle } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
 import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
-import { Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 
 export abstract class BaseProcessor {
@@ -85,7 +86,9 @@ export abstract class BaseProcessor {
         // Fix hyphenated words (like "An- bindung" -> "Anbindung")
         .replace(/(\w+)-\s+(\w+)/g, (_, p1, p2) => {
           // Only join if both parts are purely alphabetical
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           if (/^[a-zA-Z]+$/.test(p1) && /^[a-zA-Z]+$/.test(p2)) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return p1 + p2;
           }
           // Otherwise keep the hyphen

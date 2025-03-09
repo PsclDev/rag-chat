@@ -1,3 +1,6 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { inArray, and, eq, isNull } from 'drizzle-orm';
+
 import { ConfigService } from '@config';
 import {
   DrizzleDb,
@@ -5,8 +8,6 @@ import {
   InjectDrizzle,
   FileQueueEntity,
 } from '@database';
-import { Injectable, Logger } from '@nestjs/common';
-import { inArray, and, eq, isNull } from 'drizzle-orm';
 
 @Injectable()
 export class IngestionQueueService {

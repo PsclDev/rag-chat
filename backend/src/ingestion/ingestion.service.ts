@@ -1,8 +1,9 @@
-import { ConfigService } from '@config';
-import { DrizzleDb, File, InjectDrizzle } from '@database';
 import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import pLimit from 'p-limit';
+
+import { ConfigService } from '@config';
+import { DrizzleDb, File, InjectDrizzle } from '@database';
 
 import { IngestionQueueService } from './ingestion-queue.service';
 import { ProcessorFactory } from './processors';
@@ -58,8 +59,9 @@ export class IngestionService {
                   return;
                 }
 
-                const processable =
-                  await this.processorFactory.canFileBeProcessed(file.mimetype);
+                const processable = this.processorFactory.canFileBeProcessed(
+                  file.mimetype,
+                );
                 if (!processable) {
                   this.logger.warn(
                     `File ${file.id} is not processable, mimetype: ${file.mimetype}`,
@@ -106,7 +108,7 @@ export class IngestionService {
     }
   }
 
-  async onApplicationShutdown(): Promise<void> {
+  onApplicationShutdown(): void {
     this.logger.warn('Application is shutting down. Stopping ingestion...');
     this.isShuttingDown = true;
 
@@ -122,7 +124,7 @@ export class IngestionService {
    * @param fileId The ID of the file to abort processing for
    * @returns true if the file was being processed and was aborted, false otherwise
    */
-  async abortFile(fileId: string): Promise<boolean> {
+  abortFile(fileId: string): boolean {
     const controller = this.fileAbortControllers.get(fileId);
     if (!controller) {
       this.logger.warn(`No active processing found for file ${fileId}`);

@@ -1,10 +1,11 @@
 import * as fs from 'fs';
 
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+
 import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as schema from '@database';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
 import { generateId } from 'shared';
 
 import { FileDto } from './dto/file.dto';
@@ -14,7 +15,7 @@ import { FileEntity, toFileDto } from './schema/file.schema';
 @Injectable()
 export class FileUploadService {
   private readonly logger = new Logger('FileUploadService');
-  private readonly allowedMimeTypes = [
+  private readonly allowedMimeTypes: string[] = [
     'image/jpeg',
     'image/png',
     'application/pdf',
@@ -61,7 +62,7 @@ export class FileUploadService {
   }
 
   private validateFile(file: Express.Multer.File): void {
-    if (!this.allowedMimeTypes.includes(file.mimetype as any)) {
+    if (!this.allowedMimeTypes.includes(file.mimetype)) {
       throw new Error(
         `Invalid file type. Allowed types are: ${this.allowedMimeTypes.join(
           ', ',

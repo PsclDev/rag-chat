@@ -1,7 +1,6 @@
+import { Strategy } from 'unstructured-client/sdk/models/shared';
+
 import { FileEntity, FileQueueEntity } from '@database';
-import {
-  Strategy,
-} from 'unstructured-client/sdk/models/shared';
 
 export interface IngestionOptionsVo {
   chunkingStrategy: 'by_title';

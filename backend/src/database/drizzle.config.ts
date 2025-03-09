@@ -1,5 +1,6 @@
-import { PG_MIGRATIONS_PATH, PG_SCHEMA_PATH } from 'app.definition';
 import { defineConfig } from 'drizzle-kit';
+
+import { PG_MIGRATIONS_PATH, PG_SCHEMA_PATH } from 'app.definition';
 
 export default defineConfig({
   schema: PG_SCHEMA_PATH,
