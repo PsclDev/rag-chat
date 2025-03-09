@@ -52,7 +52,7 @@ export class IngestionStatusService {
       })
       .where(eq(FileStatus.id, lastStep.id));
 
-    const newStatus = await this.db
+    await this.db
       .insert(FileStatus)
       .values({
         id: generateId(),
@@ -62,6 +62,10 @@ export class IngestionStatusService {
       })
       .returning();
 
-    this.notificationService.emitFileStatusUpdate(fileId, newStatus[0]);
+    const all = await this.db
+      .select()
+      .from(FileStatus)
+      .where(eq(FileStatus.fileId, fileId));
+    this.notificationService.emitFileStatusUpdate(fileId, all);
   }
 }

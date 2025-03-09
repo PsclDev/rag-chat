@@ -6,12 +6,13 @@ import {
 
 import { IngestionQueueService } from './ingestion-queue.service';
 import { IngestionStatusService } from './ingestion-status.service';
+import { IngestionController } from './ingestion.controller';
 import { IngestionService } from './ingestion.service';
 import { PdfProcessor, ProcessorFactory } from './processors';
 import { UnstructuredService } from './unstructured.service';
 
 @Module({
-  imports: [],
+  controllers: [IngestionController],
   providers: [
     IngestionService,
     UnstructuredService,
@@ -30,7 +31,7 @@ export class IngestionModule
     this.ingestionService.startIngestion();
   }
 
-  async onApplicationShutdown() {
-    await this.ingestionService.onApplicationShutdown();
+  onApplicationShutdown() {
+    this.ingestionService.onApplicationShutdown();
   }
 }

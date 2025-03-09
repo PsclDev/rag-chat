@@ -5,13 +5,10 @@ export const useFilesStore = defineStore("files", () => {
 	const baseUrl = useRuntimeConfig().public.apiBaseUrl;
 	const files = ref<FileDto[]>([]);
 	
-	socket.on('fileStatusUpdate', (data: { fileId: string, status: FileStatusDto }) => {
-		const fileIdx = files.value.findIndex((f) => f.id === data.fileId);
-		if (fileIdx === -1) { return; }
-
-		const file = files.value[fileIdx];
-		file.status.push(data.status);
-		files.value[fileIdx] = file;
+	socket.on('fileStatusUpdate', (data: { fileId: string, status: FileStatusDto[] }) => {
+		files.value = files.value.map(f => 
+			f.id === data.fileId ? { ...f, status: data.status } : f
+		);
 	});
 
 	async function getFiles() {
@@ -25,8 +22,16 @@ export const useFilesStore = defineStore("files", () => {
 		}
 	}
 
-	function getFileUrl(id: string) {
-		return `${baseUrl}/files/${id}`
+	function getViewerData(id: string) {
+		const file = files.value.find(f => f.id === id);
+		if (!file) {
+			return undefined;
+		}
+
+		return {
+			name: file.originalname,
+			url: `${baseUrl}/files/${id}`,
+		}
 	}
 
 	async function addFile(newFiles: File[]): Promise<FileUploadResultDto> {
@@ -64,14 +69,16 @@ export const useFilesStore = defineStore("files", () => {
 		}
 	}
 
-	function reprocessFile(id: string) {
-		// TODO: Implement api request
+	async function reprocessFile(id: string) {
+		const response = await fetch(`${baseUrl}/ingestion/reingest/${id}`, {
+			method: 'PATCH',
+		})
 	}
 
 	return {
 		files,
 		getFiles,
-		getFileUrl,
+		getViewerData,
 		addFile,
 		deleteFile,
 		reprocessFile,

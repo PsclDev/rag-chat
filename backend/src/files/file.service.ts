@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 
 import { File, FileEntity } from './schema/file.schema';
@@ -11,7 +10,6 @@ export class FileService {
   private readonly logger = new Logger('FileService');
 
   constructor(
-    private readonly config: ConfigService,
     @InjectDrizzle()
     private readonly db: DrizzleDb,
   ) {}

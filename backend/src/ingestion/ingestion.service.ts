@@ -119,6 +119,11 @@ export class IngestionService {
     this.fileAbortControllers.clear();
   }
 
+  reingestFile(fileId: string): void {
+    //TODO: Implement reingestion
+    this.abortFile(fileId);
+  }
+
   /**
    * Abort processing of a specific file
    * @param fileId The ID of the file to abort processing for

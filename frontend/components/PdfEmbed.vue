@@ -1,16 +1,29 @@
 <template>
     <UModal v-model="isOpen" :ui="{ width: 'sm:max-w-6xl' }">
-        <UCard>
+        <UCard v-if="info">
             <!-- Header -->
             <template #header>
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-200">PDF Embed</h3>
+                    <h3 class="text-lg font-semibold text-slate-200">{{ info.name }}</h3>
                 </div>
             </template>
 
             <!-- Body -->
             <div class="space-y-4">
-                <VuePdfEmbed :source="fileUrl" />
+                <VuePdfEmbed :source="info.url" />
+            </div>
+        </UCard>
+        <UCard v-else>
+            <!-- Header -->
+            <template #header>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-200">File not found</h3>
+                </div>
+            </template>
+
+            <!-- Body -->
+            <div class="space-y-4">
+                <p>The file might have been moved or deleted.</p>
             </div>
         </UCard>
     </UModal>
@@ -33,5 +46,5 @@ const isOpen = computed({
     set: (value) => emit('update:modelValue', value)
 })
 
-const fileUrl = computed(() => store.getFileUrl(props.fileId))
+const info = store.getViewerData(props.fileId)
 </script>

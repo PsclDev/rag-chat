@@ -25,11 +25,11 @@ export class NotificationService {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  emitFileStatusUpdate(fileId: string, status: FileStatusEntity) {
+  emitFileStatusUpdate(fileId: string, status: FileStatusEntity[]) {
     this.socketServer.emit('fileStatusUpdate', {
       fileId,
-      status: toFileStatusDto(status),
+      status: status.map(toFileStatusDto),
     });
-    this.logger.log(`Emitted status update for file ${fileId}: ${status.step}`);
+    this.logger.log(`Emitted status update for file ${fileId}`);
   }
 }
