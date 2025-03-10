@@ -1,11 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 
-import { FileStatusEntity, toFileStatusDto } from '@database';
-
 @Injectable()
-export class NotificationService {
-  private readonly logger = new Logger('NotificationGateway');
+export class ChatService {
+  private readonly logger = new Logger('ChatGateway');
   private connectedClients: Map<string, Socket> = new Map();
   private socketServer!: Server;
 
@@ -23,13 +21,5 @@ export class NotificationService {
   handleDisconnect(client: Socket) {
     this.connectedClients.delete(client.id);
     this.logger.log(`Client disconnected: ${client.id}`);
-  }
-
-  emitFileStatusUpdate(fileId: string, status: FileStatusEntity[]) {
-    this.socketServer.emit('fileStatusUpdate', {
-      fileId,
-      status: status.map(toFileStatusDto),
-    });
-    this.logger.log(`Emitted status update for file ${fileId}`);
   }
 }

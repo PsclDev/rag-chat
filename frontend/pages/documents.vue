@@ -41,10 +41,6 @@
 <script setup lang="ts">
 import { useFilesStore } from '~/stores/files.store'
 
-useHead({
-    title: 'KI-Run\'s RAG',
-})
-
 const store = useFilesStore()
 const { files } = storeToRefs(store)
 const { getCurrentStep } = useFileStatus()

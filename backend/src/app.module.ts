@@ -7,6 +7,7 @@ import { ConfigModule } from '@config/config.module';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as DRIZZLE_SCHEMA from '@database/drizzle.schema';
 import { LlmModule } from '@llm/llm.module';
+import { ChatModule } from 'chat/chat.module';
 import { IngestionModule } from 'ingestion/ingestion.module';
 import { SharedModule } from 'shared/shared.module';
 
@@ -20,6 +21,7 @@ import { FileModule } from './files/file.module';
     ConfigModule,
     FileModule,
     IngestionModule,
+    ChatModule,
     LlmModule,
     SharedModule,
     DrizzlePGModule.registerAsync({

@@ -6,29 +6,29 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-import { NotificationService } from './notification.service';
+import { ChatService } from './chat.service';
 
 @WebSocketGateway({
-  namespace: '/notification',
+  namespace: '/chat',
   transports: ['websocket', 'polling'],
   cors: {
     origin: '*',
   },
 })
-export class NotificationGateway
+export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly chatService: ChatService) {}
 
   afterInit(server: Server) {
-    this.notificationService.setServer(server);
+    this.chatService.setServer(server);
   }
 
   handleConnection(client: Socket) {
-    this.notificationService.handleConnection(client);
+    this.chatService.handleConnection(client);
   }
 
   handleDisconnect(client: Socket) {
-    this.notificationService.handleDisconnect(client);
+    this.chatService.handleDisconnect(client);
   }
 }

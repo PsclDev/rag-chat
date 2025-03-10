@@ -1,22 +1,3 @@
-<script setup lang="ts">
-const threads = [
-    "Analysis of Q4 financial reports with focus on revenue growth",
-    "Technical documentation review for the new API endpoints",
-    "Marketing strategy brainstorming session notes",
-    "Customer feedback summary from recent product launch",
-    "Project timeline and milestone planning discussion",
-    "Bug report analysis for the mobile app version 2.1",
-    "Team meeting notes about upcoming feature releases",
-    "Vendor comparison for cloud infrastructure services"
-]
-
-const activeThread = ref(0)
-
-const selectThread = (index: number) => {
-    activeThread.value = index
-}
-</script>
-
 <template>
     <div class="w-80 h-full border-r border-slate-700/50">
         <div class="p-4 border-b border-slate-700/50">
@@ -24,19 +5,91 @@ const selectThread = (index: number) => {
         </div>
 
         <div class="overflow-y-auto h-[calc(100vh-8rem)]">
-            <div v-for="(thread, index) in threads" :key="index" @click="selectThread(index)"
-                class="p-4 cursor-pointer transition-all duration-200 border-l-2" :class="{
-                    'bg-slate-800/50 border-emerald-500': activeThread === index,
-                    'hover:bg-slate-800/30 border-transparent': activeThread !== index
-                }">
-                <p class="text-sm text-slate-300 line-clamp-2">{{ thread }}</p>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-xs text-slate-500">{{ new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 *
-                        1000).toLocaleDateString() }}</span>
-                    <div class="w-1 h-1 rounded-full bg-slate-700"></div>
-                    <span class="text-xs text-slate-500">{{ Math.floor(Math.random() * 20 + 5) }} messages</span>
-                </div>
-            </div>
+            <template v-for="(section) in groupedThreads" :key="section.title">
+                <template v-if="section.threads.length">
+                    <div
+                        class="px-4 py-2 text-xs font-bold underline underline-offset-8 text-slate-400 bg-slate-800/30">
+                        {{ section.title
+                        }}</div>
+                    <div v-for="thread in section.threads" :key="thread.id"
+                        @click="emit('selectedThread', getThreadIndex(thread))"
+                        class="p-4 cursor-pointer transition-all duration-200 border-l-2" :class="{
+                            'bg-slate-800/50 border-emerald-500': activeThread === getThreadIndex(thread),
+                            'hover:bg-slate-800/30 border-transparent': activeThread !== getThreadIndex(thread)
+                        }">
+                        <p class="text-sm text-slate-300 line-clamp-2">{{ thread.title }}</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="text-xs text-slate-500">{{ formatTime(thread.lastMessageAt) }}</span>
+                            <div class="w-1 h-1 rounded-full bg-slate-700"></div>
+                            <span class="text-xs text-slate-500">{{ thread.messageCount }} messages</span>
+                        </div>
+                    </div>
+                </template>
+            </template>
         </div>
     </div>
 </template>
+
+<script setup lang="ts">
+import type { ThreadDto } from '~/types/chat.types'
+
+const props = defineProps<{
+    activeThread: number
+    threads: ThreadDto[]
+}>()
+const emit = defineEmits<{
+    (e: 'selectedThread', index: number): void
+}>()
+
+const getThreadIndex = (thread: ThreadDto) => {
+    return props.threads.findIndex(t => t.id === thread.id)
+}
+
+const groupedThreads = computed(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    return {
+        today: {
+            title: 'Today',
+            threads: props.threads.filter(thread => {
+                const threadDate = new Date(thread.lastMessageAt)
+                threadDate.setHours(0, 0, 0, 0)
+                return threadDate.getTime() === today.getTime()
+            })
+        },
+        yesterday: {
+            title: 'Yesterday',
+            threads: props.threads.filter(thread => {
+                const threadDate = new Date(thread.lastMessageAt)
+                threadDate.setHours(0, 0, 0, 0)
+                return threadDate.getTime() === yesterday.getTime()
+            })
+        },
+        older: {
+            title: 'Older',
+            threads: props.threads.filter(thread => {
+                const threadDate = new Date(thread.lastMessageAt)
+                threadDate.setHours(0, 0, 0, 0)
+                return threadDate.getTime() < yesterday.getTime()
+            })
+        }
+    }
+})
+
+const formatTime = (date: string) => {
+    const threadDate = new Date(date)
+    const yesterdayOrToday = new Date()
+    yesterdayOrToday.setHours(0, 0, 0, 0)
+    yesterdayOrToday.setDate(yesterdayOrToday.getDate() - 1)
+
+    if (threadDate.getTime() >= yesterdayOrToday.getTime()) {
+        return threadDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    } else {
+        return threadDate.toLocaleDateString()
+    }
+}
+</script>
