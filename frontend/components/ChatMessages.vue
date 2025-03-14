@@ -1,10 +1,8 @@
 <template>
     <div class="flex-1 flex flex-col relative">
-        <!-- Messages Area -->
         <div ref="messagesContainer" class="absolute inset-0 overflow-y-auto pb-[76px]">
-            <div class="flex flex-col gap-5 p-6 h-full">
-                <div v-if="currentThreadMessages.length === 0"
-                    class="flex items-center justify-center h-full -mt-[76px]">
+            <div class="flex flex-col gap-5 p-6">
+                <div v-if="currentThreadMessages.length === 0" class="flex items-center justify-center h-full">
                     <div class="flex flex-col items-center max-w-3xl w-full">
                         <p class="text-slate-200 text-2xl font-medium mb-8">Ask me anything</p>
                         <div class="flex gap-4 w-full justify-center">
@@ -28,16 +26,15 @@
                     </div>
 
                     <span class="text-xs text-slate-500 mt-1">{{ new Date(message.writtenAt).toLocaleString()
-                        }}</span>
+                    }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Input Area -->
         <div class="absolute bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700/50">
             <div class="p-4 flex gap-4">
-                <textarea type="text" placeholder="Type your message..." @keyup="handleKeyUp" @input="autoResize"
-                    :disabled="isLoading" v-model="chatInput" ref="textareaRef"
+                <textarea type="text" placeholder="Type your message..." @keydown="handleKeyDown" :disabled="isLoading"
+                    v-model="chatInput" ref="textareaRef" autofocus
                     class="flex-1 bg-slate-700/50 border border-slate-600/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-400 focus:outline-none focus:border-emerald-500/50 transition-colors disabled:opacity-50"></textarea>
 
                 <UButton
@@ -66,36 +63,46 @@ const handleQuestionClick = (question: string) => {
     sendMessage()
 }
 
-const handleKeyUp = (event: KeyboardEvent) => {
-    if (event.key === 'Enter') {
-        event.preventDefault()
-        sendMessage()
+const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+        return;
     }
 }
 
 const sendMessage = () => {
-    store.sendMessage(chatInput.value)
-    chatInput.value = ''
+    store.sendMessage(chatInput.value);
+    chatInput.value = '';
+    setTimeout(() => {
+        textareaRef.value?.focus();
+    }, 1);
 }
 
 const autoResize = () => {
-    const textarea = textareaRef.value
+    const textarea = textareaRef.value;
     if (!textarea) return;
 
-    textarea.style.height = '50px'
-    const newHeight = Math.min(textarea.scrollHeight, 144)
-    textarea.style.height = `${newHeight}px`
+    textarea.style.height = '50px';
+    const newHeight = Math.min(textarea.scrollHeight, 144);
+    textarea.style.height = `${newHeight}px`;
 }
+
+watch(chatInput, () => {
+    nextTick(() => {
+        autoResize()
+    })
+})
 
 watch(currentThreadMessages, () => {
     nextTick(() => {
-        scrollToBottom()
+        scrollToBottom();
     })
 })
 
 const scrollToBottom = () => {
     if (messagesContainer.value) {
-        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
 }
 </script>

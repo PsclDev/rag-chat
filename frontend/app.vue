@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-space-grotesk">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-space-grotesk">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

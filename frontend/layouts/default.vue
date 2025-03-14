@@ -22,7 +22,7 @@ const getIcon = () => {
 </script>
 
 <template>
-    <div class="relative min-h-screen">
+    <div class="relative p-8">
         <button @click="togglePage"
             class="fixed bottom-6 left-6 p-3.5 bg-slate-800/50 backdrop-blur-sm rounded-xl flex items-center justify-center hover:bg-slate-700/60 transition-all duration-300 z-50 border border-emerald-500/20 hover:border-emerald-500/50 group hover:shadow-lg hover:shadow-emerald-500/10">
             <UIcon :name="getIcon()"

@@ -30,12 +30,9 @@ export class ChatService {
     this.fakeMessage(socket, message.threadId);
   }
 
-  async fakeMessage(socket: Socket, threadId: string) {
+  fakeMessage(socket: Socket, threadId: string) {
     const loremMessage =
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
-
-    const delay = Math.floor(Math.random() * 3000) + 1000;
-    await new Promise((resolve) => setTimeout(resolve, delay));
 
     socket.emit('message_received', {
       id: generateId(),
