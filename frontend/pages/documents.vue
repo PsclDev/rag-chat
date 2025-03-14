@@ -52,6 +52,8 @@ const selectedFiles = ref<File[]>([])
 
 onMounted(async () => {
     await store.getFiles()
+    const notificationSocket = useNotificationSocket();
+    notificationSocket.connect();
 })
 
 const filteredFiles = computed(() =>

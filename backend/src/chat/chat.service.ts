@@ -1,25 +1,48 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Socket, Server } from 'socket.io';
+import { Socket } from 'socket.io';
+
+import { DrizzleDb, InjectDrizzle, Message, toMessageDto } from '@database';
+import { generateId } from '@shared';
+
+import { NewChatMessageDto } from './dto/message.dto';
 
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger('ChatGateway');
-  private connectedClients: Map<string, Socket> = new Map();
-  private socketServer!: Server;
 
-  constructor() {}
+  constructor(
+    @InjectDrizzle()
+    private readonly db: DrizzleDb,
+  ) {}
 
-  setServer(server: Server) {
-    this.socketServer = server;
+  async newMessage(socket: Socket, message: NewChatMessageDto) {
+    const msg = await this.db
+      .insert(Message)
+      .values({
+        id: generateId(),
+        threadId: message.threadId,
+        author: 'user',
+        content: message.message,
+      })
+      .returning();
+
+    socket.emit('message_received', toMessageDto(msg[0]));
+    this.fakeMessage(socket, message.threadId);
   }
 
-  handleConnection(client: Socket) {
-    this.connectedClients.set(client.id, client);
-    this.logger.log(`Client connected: ${client.id}`);
-  }
+  async fakeMessage(socket: Socket, threadId: string) {
+    const loremMessage =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
 
-  handleDisconnect(client: Socket) {
-    this.connectedClients.delete(client.id);
-    this.logger.log(`Client disconnected: ${client.id}`);
+    const delay = Math.floor(Math.random() * 3000) + 1000;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    socket.emit('message_received', {
+      id: generateId(),
+      threadId: threadId,
+      author: 'assistant',
+      content: loremMessage,
+      writtenAt: new Date().toISOString(),
+    });
   }
 }

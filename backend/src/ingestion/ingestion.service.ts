@@ -35,7 +35,7 @@ export class IngestionService {
       while (!this.isShuttingDown) {
         const filesToIngest = await this.queue.getFilesToIngest();
         if (filesToIngest.length === 0) {
-          this.logger.debug('No files to process, waiting 15 seconds...');
+          this.logger.verbose('No files to process, waiting 15 seconds...');
           await this.sleep(15000);
           continue;
         }

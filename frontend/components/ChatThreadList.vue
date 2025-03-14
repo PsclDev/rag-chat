@@ -12,10 +12,10 @@
                         {{ section.title
                         }}</div>
                     <div v-for="thread in section.threads" :key="thread.id"
-                        @click="emit('selectedThread', getThreadIndex(thread))"
+                        @click="store.joinThread(getThreadIndex(thread))"
                         class="p-4 cursor-pointer transition-all duration-200 border-l-2" :class="{
-                            'bg-slate-800/50 border-emerald-500': activeThread === getThreadIndex(thread),
-                            'hover:bg-slate-800/30 border-transparent': activeThread !== getThreadIndex(thread)
+                            'bg-slate-800/50 border-emerald-500': activeThreadIdx === getThreadIndex(thread),
+                            'hover:bg-slate-800/30 border-transparent': activeThreadIdx !== getThreadIndex(thread)
                         }">
                         <p class="text-sm text-slate-300 line-clamp-2">{{ thread.title }}</p>
                         <div class="flex items-center gap-2 mt-2">
@@ -33,16 +33,11 @@
 <script setup lang="ts">
 import type { ThreadDto } from '~/types/chat.types'
 
-const props = defineProps<{
-    activeThread: number
-    threads: ThreadDto[]
-}>()
-const emit = defineEmits<{
-    (e: 'selectedThread', index: number): void
-}>()
+const store = useChatStore()
+const { threads, activeThreadIdx } = storeToRefs(store)
 
 const getThreadIndex = (thread: ThreadDto) => {
-    return props.threads.findIndex(t => t.id === thread.id)
+    return threads.value.findIndex(t => t.id === thread.id)
 }
 
 const groupedThreads = computed(() => {
@@ -55,7 +50,7 @@ const groupedThreads = computed(() => {
     return {
         today: {
             title: 'Today',
-            threads: props.threads.filter(thread => {
+            threads: threads.value.filter(thread => {
                 const threadDate = new Date(thread.lastMessageAt)
                 threadDate.setHours(0, 0, 0, 0)
                 return threadDate.getTime() === today.getTime()
@@ -63,7 +58,7 @@ const groupedThreads = computed(() => {
         },
         yesterday: {
             title: 'Yesterday',
-            threads: props.threads.filter(thread => {
+            threads: threads.value.filter(thread => {
                 const threadDate = new Date(thread.lastMessageAt)
                 threadDate.setHours(0, 0, 0, 0)
                 return threadDate.getTime() === yesterday.getTime()
@@ -71,7 +66,7 @@ const groupedThreads = computed(() => {
         },
         older: {
             title: 'Older',
-            threads: props.threads.filter(thread => {
+            threads: threads.value.filter(thread => {
                 const threadDate = new Date(thread.lastMessageAt)
                 threadDate.setHours(0, 0, 0, 0)
                 return threadDate.getTime() < yesterday.getTime()

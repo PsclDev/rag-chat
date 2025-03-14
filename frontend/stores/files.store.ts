@@ -84,3 +84,7 @@ export const useFilesStore = defineStore("files", () => {
 		reprocessFile,
 	};
 });
+
+if (import.meta.hot) {
+	import.meta.hot.accept(acceptHMRUpdate(useFilesStore, import.meta.hot))
+}

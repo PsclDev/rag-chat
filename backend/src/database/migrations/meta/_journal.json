@@ -29,6 +29,13 @@
       "when": 1740173355871,
       "tag": "0003_init_file_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1741636735331,
+      "tag": "0004_init_thread_and_messages",
+      "breakpoints": true
     }
   ]
 }
