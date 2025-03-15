@@ -1,7 +1,6 @@
 <template>
     <div>
-        <UCard class="bg-slate-800 border border-slate-700 hover:shadow-lg transition-shadow group relative">
-            <!-- File Info -->
+        <UCard class="bg-slate-900 border border-slate-800 hover:shadow-lg transition-shadow group relative">
             <div class="flex items-center p-4">
                 <UIcon :name="useFileIcon(file.mimetype)" class="text-3xl text-emerald-400 mr-4" />
                 <div class="flex-1 min-w-0">
@@ -14,22 +13,19 @@
                 </div>
             </div>
 
-            <!-- Action Buttons -->
             <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                <!-- Details Button (Top Right) -->
                 <div class="absolute top-2 right-2">
-                    <UButton size="xs" color="gray" variant="solid" icon="i-heroicons-eye" @click="handleView">
+                    <UButton size="md" color="neutral" variant="solid" icon="i-heroicons-eye" @click="handleView">
                         View
                     </UButton>
                 </div>
 
-                <!-- Center Buttons -->
                 <div class="h-full flex items-center justify-center gap-3">
-                    <UButton size="xs" color="blue" variant="solid" icon="i-heroicons-information-circle"
+                    <UButton size="sm" color="primary" variant="solid" icon="i-heroicons-information-circle"
                         @click="showDetails = true">
                         Details
                     </UButton>
-                    <UButton size="xs" color="red" variant="solid" icon="i-heroicons-trash"
+                    <UButton size="sm" color="error" variant="solid" icon="i-heroicons-trash"
                         @click="showDeleteModal = true">
                         Delete
                     </UButton>
@@ -49,18 +45,15 @@
             </div>
         </UCard>
 
-        <!-- Details Modal -->
         <FileDetails v-model="showDetails" :file="file" @view="handleView" @reprocess="handleReprocess"
-            @delete="handleDelete" />
+            @delete="showDeleteModal = true" />
 
-        <!-- PDF Embed Modal -->
         <PdfEmbed v-model="showEmbed" :file-id="file.id" />
 
-        <!-- Delete Confirmation Modal -->
         <ConfirmModal v-model="showDeleteModal" title="Confirm Delete"
             :message="`Are you sure you want to delete '${file.originalname}'? This action cannot be undone.`"
             icon="i-heroicons-exclamation-triangle" icon-class="text-red-400" confirm-button-text="Delete"
-            confirm-button-color="red" @confirm="handleDelete" />
+            confirm-button-color="error" @confirm="handleDelete" />
     </div>
 </template>
 

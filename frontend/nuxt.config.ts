@@ -10,5 +10,9 @@ export default defineNuxtConfig({
 			apiBaseUrlWs: process.env.NUXT_PUBLIC_API_BASE_URL_WS
 		}
 	},
+	ui: {
+		colorMode: false
+	},
+	css: ["~/assets/css/main.css"],
 	plugins: ["~/plugins/socket.io"]
 });

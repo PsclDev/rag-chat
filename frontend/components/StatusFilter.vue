@@ -4,7 +4,7 @@
             @click="$emit('update:modelValue', status)"
             class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors" :class="[
                 modelValue === status
-                    ? 'bg-emerald-400 text-slate-900'
+                    ? 'bg-emerald-400/70 text-slate-900'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
             ]">
             <div class="flex items-center gap-2">

@@ -1,31 +1,29 @@
 <template>
-    <UModal v-model="isOpen" :ui="{ width: 'sm:max-w-6xl' }">
-        <UCard v-if="info">
-            <!-- Header -->
-            <template #header>
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-200">{{ info.name }}</h3>
-                </div>
-            </template>
+    <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-6xl h-full' }">
+        <template #content>
+            <UCard class="h-full" v-if="info">
+                <template #header>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-200">{{ info.name }}</h3>
+                    </div>
+                </template>
 
-            <!-- Body -->
-            <div class="space-y-4">
-                <VuePdfEmbed :source="info.url" />
-            </div>
-        </UCard>
-        <UCard v-else>
-            <!-- Header -->
-            <template #header>
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-200">File not found</h3>
+                <div class="space-y-4 flex justify-center h-full">
+                    <VuePdfEmbed :source="info.url" />
                 </div>
-            </template>
+            </UCard>
+            <UCard v-else>
+                <template #header>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-200">File not found</h3>
+                    </div>
+                </template>
 
-            <!-- Body -->
-            <div class="space-y-4">
-                <p>The file might have been moved or deleted.</p>
-            </div>
-        </UCard>
+                <div class="space-y-4">
+                    <p>The file might have been moved or deleted.</p>
+                </div>
+            </UCard>
+        </template>
     </UModal>
 </template>
 

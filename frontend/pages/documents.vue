@@ -1,12 +1,12 @@
 <template>
-    <!-- Upload Dropzone -->
-    <UCard class="mb-4 bg-slate-800 shadow-lg border border-slate-700">
+    <UCard class="mb-4 bg-slate-900 shadow-lg border border-slate-800">
         <div class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center transition-colors hover:border-slate-500"
             @dragover.prevent @drop.prevent="handleDrop">
             <UIcon name="i-heroicons-cloud-arrow-up" class="text-5xl mb-3 text-emerald-400" />
             <p class="text-slate-300 text-base">
                 Drop files here or
-                <UButton variant="ghost" class="text-emerald-400 hover:text-emerald-300" @click="triggerFileInput">
+                <UButton variant="ghost" class="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900"
+                    @click="triggerFileInput">
                     browse
                 </UButton>
             </p>
@@ -14,9 +14,7 @@
         </div>
     </UCard>
 
-    <!-- Search and Filters -->
     <div class="mb-8 space-y-4">
-        <!-- Search Bar -->
         <div class="relative">
             <UIcon name="i-heroicons-magnifying-glass"
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -24,16 +22,13 @@
                 class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-slate-200 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors" />
         </div>
 
-        <!-- Filter Chips -->
         <StatusFilter v-model="statusFilter" />
     </div>
 
-    <!-- Document Grid -->
     <TransitionGroup tag="div" class="grid gap-4 auto-cols-fr" :class="gridColumns" name="grid" appear>
         <FileCard v-for="file in filteredFiles" :key="file.id" :file="file" />
     </TransitionGroup>
 
-    <!-- Upload Modal -->
     <UploadModal v-model="showUploadModal" :files="selectedFiles" @files-change="selectedFiles = $event"
         @upload-complete="handleUploadComplete" />
 </template>

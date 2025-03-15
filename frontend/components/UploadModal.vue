@@ -1,63 +1,65 @@
 <template>
-    <UModal v-model="isOpen" :ui="{ width: 'sm:max-w-2xl' }">
-        <UCard>
-            <!-- Header -->
-            <template #header>
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-slate-200">Upload Files</h3>
-                    <p class="text-sm text-slate-400">{{ files.length }} files selected</p>
-                </div>
-            </template>
+    <UModal v-model:open="isOpen">
+        <template #content>
+            <UCard>
+                <!-- Header -->
+                <template #header>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-200">Upload Files</h3>
+                        <p class="text-sm text-slate-400">{{ files.length }} files selected</p>
+                    </div>
+                </template>
 
-            <!-- Body -->
-            <div class="space-y-4">
-                <!-- File List -->
-                <div class="max-h-96 overflow-y-auto space-y-2">
-                    <div v-for="(file, index) in files" :key="index"
-                        class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
-                        <div class="flex items-center space-x-3">
-                            <UIcon :name="useFileIcon(file.type)" class="text-2xl text-emerald-400" />
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-slate-200">{{ file.name }}</p>
-                                <p class="text-xs text-slate-400">{{ formatFileSize(file.size) }}</p>
-                                <p v-if="isFileRejected(file.name)" class="text-xs text-red-400 mt-1">
-                                    {{ getRejectedMessage(file.name) }}
-                                </p>
+                <!-- Body -->
+                <div class="space-y-4">
+                    <!-- File List -->
+                    <div class="max-h-96 overflow-y-auto space-y-2">
+                        <div v-for="(file, index) in files" :key="index"
+                            class="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <UIcon :name="useFileIcon(file.type)" class="text-2xl text-emerald-400" />
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-slate-200">{{ file.name }}</p>
+                                    <p class="text-xs text-slate-400">{{ formatFileSize(file.size) }}</p>
+                                    <p v-if="isFileRejected(file.name)" class="text-xs text-red-400 mt-1">
+                                        {{ getRejectedMessage(file.name) }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <template v-if="rejectedFileStatus.length > 0">
+                                    <UIcon v-if="!isFileRejected(file.name)" name="i-heroicons-check-circle"
+                                        class="text-2xl text-emerald-400" />
+                                    <UIcon v-else name="i-heroicons-x-circle" class="text-2xl text-red-400" />
+                                </template>
+                                <UButton v-if="!isUploading && rejectedFileStatus.length === 0" color="error"
+                                    variant="ghost" icon="i-heroicons-x-mark" @click="removeFile(index)" size="sm">
+                                    Remove
+                                </UButton>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <template v-if="rejectedFileStatus.length > 0">
-                                <UIcon v-if="!isFileRejected(file.name)" name="i-heroicons-check-circle"
-                                    class="text-xl text-emerald-400" />
-                                <UIcon v-else name="i-heroicons-x-circle" class="text-xl text-red-400" />
-                            </template>
-                            <UButton v-if="!isUploading" color="red" variant="ghost" icon="i-heroicons-x-mark"
-                                @click="removeFile(index)" size="xs">
-                                Remove
-                            </UButton>
-                        </div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div v-if="isUploading" class="space-y-2">
+                        <UProgress animation="swing" />
                     </div>
                 </div>
 
-                <!-- Upload Progress -->
-                <div v-if="isUploading" class="space-y-2">
-                    <UProgress animation="swing" />
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <template #footer>
-                <div class="flex justify-end gap-2">
-                    <UButton color="gray" variant="solid" :disabled="isUploading" @click="isOpen = false">
-                        Cancel
-                    </UButton>
-                    <UButton loading-auto color="emerald" variant="solid" :loading="isUploading"
-                        :disabled="files.length === 0 || isUploading" @click="startUpload">
-                        Upload
-                    </UButton>
-                </div>
-            </template>
-        </UCard>
+                <!-- Footer -->
+                <template #footer>
+                    <div class="flex justify-end gap-2">
+                        <UButton variant="ghost" :disabled="isUploading" @click="isOpen = false" class="text-white">
+                            Cancel
+                        </UButton>
+                        <UButton loading-auto color="success" variant="solid" :loading="isUploading"
+                            class="text-gray-900" :disabled="files.length === 0 || isUploading" @click="startUpload">
+                            Upload
+                        </UButton>
+                    </div>
+                </template>
+            </UCard>
+        </template>
     </UModal>
 </template>
 
