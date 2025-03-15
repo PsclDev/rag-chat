@@ -36,6 +36,13 @@
       "when": 1741636735331,
       "tag": "0004_init_thread_and_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1742044190319,
+      "tag": "0005_remove_filename",
+      "breakpoints": true
     }
   ]
 }

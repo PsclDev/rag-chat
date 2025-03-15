@@ -4,7 +4,6 @@ export interface FileDto {
   id: string;
   originalname: string;
   mimetype: string;
-  filename: string;
   size: number;
   status: FileStatusDto[];
   createdAt: Date;

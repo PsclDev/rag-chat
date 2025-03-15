@@ -67,17 +67,6 @@ export abstract class BaseProcessor {
     }
   }
 
-  /**
-   * Preprocesses text by cleaning and normalizing it for better processing:
-   * - Removes standalone numbers (like page numbers)
-   * - Joins hyphenated words (e.g. "pre- process" -> "preprocess") if both parts are alphabetical
-   * - Normalizes whitespace by replacing multiple spaces and newlines with single spaces
-   * - Removes special characters while preserving basic punctuation (.,!?-)
-   * - Trims leading/trailing whitespace
-   *
-   * @param text - The raw text to preprocess
-   * @returns The cleaned and normalized text string
-   */
   preprocessText(text: string): string {
     return (
       text
@@ -97,8 +86,7 @@ export abstract class BaseProcessor {
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .replace(/[\r\n]+/g, ' ') // Replace newlines with space
         .trim() // Remove leading/trailing whitespace
-        .replace(/[^\w\s.,!?-]/g, '') // Remove special characters except basic punctuation
-        .replace(/\s+/g, ' ')
-    ); // Clean up any double spaces that might have been created
+        .replace(/\s+/g, ' ') // Clean up any double spaces that might have been created
+    );
   }
 }

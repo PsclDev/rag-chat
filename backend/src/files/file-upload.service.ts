@@ -108,7 +108,6 @@ export class FileUploadService {
         size: meta.size,
         mimetype: meta.mimetype,
         originalname: meta.originalname,
-        filename: meta.filename,
       });
 
       await tx.insert(schema.FileQueue).values({
