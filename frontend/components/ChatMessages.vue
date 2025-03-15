@@ -28,6 +28,21 @@
                     <span class="text-xs text-slate-500 mt-1">{{ new Date(message.writtenAt).toLocaleString()
                     }}</span>
                 </div>
+
+                <div v-if="isLoading" class="flex flex-col items-start">
+                    <div
+                        class="max-w-2xl rounded-2xl px-4 py-3 bg-slate-700/50 text-slate-200 relative overflow-hidden loading-bubble">
+                        <div class="flex gap-2 items-center px-2">
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 animate-pulse-scale"
+                                style="animation-delay: 0ms"></div>
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 animate-pulse-scale"
+                                style="animation-delay: 200ms"></div>
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 animate-pulse-scale"
+                                style="animation-delay: 400ms"></div>
+                        </div>
+                    </div>
+                    <span class="text-xs text-slate-500 mt-1">Assistant is typing...</span>
+                </div>
             </div>
         </div>
 
@@ -119,5 +134,63 @@ textarea {
 
 textarea::-webkit-scrollbar {
     display: none;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+.animate-bounce {
+    animation: bounce 1s infinite;
+}
+
+@keyframes pulse-scale {
+
+    0%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+.animate-pulse-scale {
+    animation: pulse-scale 1.5s ease-in-out infinite;
+}
+
+.loading-bubble::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.05),
+            transparent);
+    animation: shine 2s infinite;
+}
+
+@keyframes shine {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
 }
 </style>
