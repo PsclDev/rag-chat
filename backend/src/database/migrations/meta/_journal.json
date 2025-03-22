@@ -43,6 +43,13 @@
       "when": 1742044190319,
       "tag": "0005_remove_filename",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1742678796085,
+      "tag": "0006_embedding_keywords",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,7 @@ export const Embedding = pgTable('embedding', {
     .notNull()
     .references(() => File.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
+  keywords: text('keywords').array(),
   embedding: vector('embedding', { dimensions: 1024 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

@@ -4,6 +4,7 @@ import { cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
 import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as schema from '@database';
+import { AnthropicService } from '@llm/models/anthropic.service';
 
 import { EmbeddingService } from './embedding.service';
 
@@ -45,6 +46,7 @@ export class VoyageAdapterService extends EmbeddingService {
     private readonly configService: ConfigService,
     @InjectDrizzle()
     private readonly db: DrizzleDb,
+    private readonly llmService: AnthropicService,
   ) {
     super();
     this.httpHeader = {
@@ -76,9 +78,13 @@ export class VoyageAdapterService extends EmbeddingService {
 
       const { data } = (await response.json()) as EmbeddingResponse;
       for (const embedding of data) {
+        const keywords = await this.llmService.generateEmbeddingKeywords(
+          content[embedding.index],
+        );
         await this.db.insert(schema.Embedding).values({
           fileId,
           content: content[embedding.index],
+          keywords,
           embedding: embedding.embedding,
         });
       }

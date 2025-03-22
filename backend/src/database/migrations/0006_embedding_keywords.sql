@@ -1,0 +1,1 @@
+ALTER TABLE "embedding" ADD COLUMN "keywords" text[]
