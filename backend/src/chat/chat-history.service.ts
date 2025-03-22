@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { desc } from 'drizzle-orm';
 
-import { DrizzleDb, InjectDrizzle, ThreadEntity } from '@database';
+import { DrizzleDb, InjectDrizzle, Thread, ThreadEntity } from '@database';
 
 @Injectable()
 export class ChatHistoryService {
@@ -16,6 +17,7 @@ export class ChatHistoryService {
       with: {
         messages: true,
       },
+      orderBy: [desc(Thread.lastMessageAt)],
     });
   }
 }

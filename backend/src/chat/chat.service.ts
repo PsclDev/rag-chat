@@ -2,7 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 import { Socket } from 'socket.io';
 
-import { DrizzleDb, InjectDrizzle, Message, toMessageDto } from '@database';
+import {
+  DrizzleDb,
+  InjectDrizzle,
+  Message,
+  Thread,
+  toMessageDto,
+  toThreadDto,
+} from '@database';
 import { AnthropicService } from '@llm/models/anthropic.service';
 import { generateId } from '@shared';
 import { EmbeddingService } from '@shared/embedding/embedding.service';
@@ -19,6 +26,23 @@ export class ChatService {
     private readonly embeddingService: EmbeddingService,
     private readonly llmService: AnthropicService,
   ) {}
+
+  async newThread(socket: Socket, payload: NewChatMessageDto) {
+    const thread = await this.db
+      .insert(Thread)
+      .values({
+        id: generateId(),
+        title: 'New Chat',
+      })
+      .returning();
+
+    const threadDto = toThreadDto({ ...thread[0], messages: [] });
+    socket.emit('thread_created', threadDto);
+    await this.newMessage(socket, {
+      ...payload,
+      threadId: thread[0].id,
+    });
+  }
 
   async newMessage(socket: Socket, message: NewChatMessageDto) {
     const msg = await this.db
@@ -50,10 +74,7 @@ export class ChatService {
     );
 
     const context = similarEmbeds.map((embed) => embed.content).join('\n');
-    const response = await this.llmService.sendMessage(
-      context,
-      lastMessage.content,
-    );
+    const response = await this.llmService.sendMessage(context, messages);
 
     const msg = await this.db
       .insert(Message)
@@ -64,6 +85,21 @@ export class ChatService {
         content: response,
       })
       .returning();
+
+    // TODO: This is a hack to get the title of the thread
+    if (messages.length + 1 === 2) {
+      const title = await this.llmService.generateThreadTitle(messages);
+      const thread = await this.db
+        .update(Thread)
+        .set({ title })
+        .where(eq(Thread.id, threadId))
+        .returning();
+
+      socket.emit(
+        'thread_updated',
+        toThreadDto({ ...thread[0], title, messages: [] }),
+      );
+    }
 
     socket.emit('message_received', toMessageDto(msg[0]));
   }

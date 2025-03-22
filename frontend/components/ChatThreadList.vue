@@ -1,7 +1,12 @@
 <template>
     <div class="w-80 h-full border-r border-slate-700/50">
-        <div class="p-4 border-b border-slate-700/50">
+        <div class="p-4 border-b border-slate-700/50 flex items-center justify-between">
             <h2 class="text-lg font-medium text-slate-200">Conversations</h2>
+            <button @click="store.newThread()"
+                class="p-1 bg-slate-800/50 backdrop-blur-sm rounded-xl flex items-center justify-center hover:bg-slate-700/60 transition-all duration-300 z-50 border border-emerald-500/20 hover:border-emerald-500/50 group hover:shadow-lg hover:shadow-emerald-500/10">
+                <UIcon name="solar:pen-new-round-bold"
+                    class="text-emerald-500 text-xl group-hover:scale-115 group-hover:rotate-3 transition-all duration-300 ease-out" />
+            </button>
         </div>
 
         <div class="overflow-y-auto h-[calc(100vh-8rem)]">
@@ -17,7 +22,9 @@
                             'bg-slate-800/50 border-emerald-500': activeThreadIdx === getThreadIndex(thread),
                             'hover:bg-slate-800/30 border-transparent': activeThreadIdx !== getThreadIndex(thread)
                         }">
-                        <p class="text-sm text-slate-300 line-clamp-2">{{ thread.title }}</p>
+                        <transition name="fade-scale" mode="out-in">
+                            <p :key="thread.title" class="text-sm text-slate-300 line-clamp-2">{{ thread.title }}</p>
+                        </transition>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="text-xs text-slate-500">{{ formatTime(thread.lastMessageAt) }}</span>
                             <div class="w-1 h-1 rounded-full bg-slate-700"></div>
@@ -41,6 +48,7 @@ const getThreadIndex = (thread: ThreadDto) => {
 }
 
 const groupedThreads = computed(() => {
+    const currentThreads = threads.value
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -50,7 +58,7 @@ const groupedThreads = computed(() => {
     return {
         today: {
             title: 'Today',
-            threads: threads.value.filter(thread => {
+            threads: currentThreads.filter(thread => {
                 const threadDate = new Date(thread.lastMessageAt)
                 threadDate.setHours(0, 0, 0, 0)
                 return threadDate.getTime() === today.getTime()
@@ -58,7 +66,7 @@ const groupedThreads = computed(() => {
         },
         yesterday: {
             title: 'Yesterday',
-            threads: threads.value.filter(thread => {
+            threads: currentThreads.filter(thread => {
                 const threadDate = new Date(thread.lastMessageAt)
                 threadDate.setHours(0, 0, 0, 0)
                 return threadDate.getTime() === yesterday.getTime()
@@ -66,7 +74,7 @@ const groupedThreads = computed(() => {
         },
         older: {
             title: 'Older',
-            threads: threads.value.filter(thread => {
+            threads: currentThreads.filter(thread => {
                 const threadDate = new Date(thread.lastMessageAt)
                 threadDate.setHours(0, 0, 0, 0)
                 return threadDate.getTime() < yesterday.getTime()
@@ -88,3 +96,22 @@ const formatTime = (date: string) => {
     }
 }
 </script>
+
+<style scoped>
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.fade-scale-enter-to,
+.fade-scale-leave-from {
+    opacity: 1;
+    transform: scale(1);
+}
+</style>

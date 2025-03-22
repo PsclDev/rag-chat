@@ -50,6 +50,15 @@ export class ChatGateway implements OnGatewayDisconnect {
     client.join(threadId);
   }
 
+  @SubscribeMessage('new_thread')
+  handleNewThread(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: NewChatMessageDto,
+  ) {
+    this.logger.debug(`Client ${client.id} creating new thread`);
+    this.chatService.newThread(client, payload);
+  }
+
   @SubscribeMessage('send_message')
   handleSendMessage(
     @ConnectedSocket() client: Socket,

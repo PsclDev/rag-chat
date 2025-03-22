@@ -8,6 +8,12 @@ export const useChatStore = defineStore("chat", () => {
 	const activeThreadIdx = ref(-1)
 	const threads = ref<ThreadDto[]>([]);
 	const currentThreadMessages = ref<MessageDto[]>([]);
+
+	function newThread() {
+		activeThreadIdx.value = -1;
+		activeThread.value = null;
+		currentThreadMessages.value = [];
+	}
 	
 	function joinThread(threadIdx: number) {
 		const thread = threads.value[threadIdx];
@@ -18,6 +24,33 @@ export const useChatStore = defineStore("chat", () => {
 		currentThreadMessages.value = thread.messages;
 		socket.emit('join_thread', thread.id);
 	}
+
+	socket.on('thread_created', (data: ThreadDto) => {
+		threads.value.unshift(data);
+		joinThread(0);
+	});
+
+	socket.on('thread_updated', ({ messages, ...rest }: ThreadDto) => {
+		const threadIdx = threads.value.findIndex(t => t.id === rest.id);
+		if (threadIdx === -1) {
+			return;
+		}
+
+		const existingThreads = [...threads.value];
+		const thread = existingThreads[threadIdx];
+		
+		const updatedThread = {
+			...thread,
+			...rest,
+			messages: thread.messages
+		};
+		existingThreads[threadIdx] = updatedThread;
+		threads.value = existingThreads;
+
+		if (threadIdx === activeThreadIdx.value) {
+			activeThread.value = updatedThread;
+		}
+	});
 
 	socket.on('message_received', (data: MessageDto) => {
 		if (!activeThread.value) return;
@@ -40,10 +73,17 @@ export const useChatStore = defineStore("chat", () => {
 
 	function sendMessage(message: string) {
 		if (!socket) return;
-		socket.emit('send_message', {
-			threadId: activeThread.value?.id,
-			message,
-		});
+
+		if (activeThreadIdx.value !== -1) {			
+			socket.emit('send_message', {
+				threadId: activeThread.value?.id,
+				message,
+			});
+		} else {
+			socket.emit('new_thread', {
+				message,
+			});
+		}
 		isLoading.value = true;
 	}
 
@@ -66,6 +106,7 @@ export const useChatStore = defineStore("chat", () => {
 		currentThreadMessages,
 		threads,
 		getThreads,
+		newThread,
 		joinThread,
 		sendMessage,
 	};

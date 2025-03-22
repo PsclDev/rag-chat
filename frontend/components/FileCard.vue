@@ -15,17 +15,17 @@
 
             <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div class="absolute top-2 right-2">
-                    <UButton size="md" color="neutral" variant="solid" icon="i-heroicons-eye" @click="handleView">
+                    <UButton size="md" color="neutral" variant="solid" icon="solar:eye-bold" @click="handleView">
                         View
                     </UButton>
                 </div>
 
                 <div class="h-full flex items-center justify-center gap-3">
-                    <UButton size="sm" color="primary" variant="solid" icon="i-heroicons-information-circle"
+                    <UButton size="sm" color="primary" variant="solid" icon="solar:info-square-bold"
                         @click="showDetails = true">
                         Details
                     </UButton>
-                    <UButton size="sm" color="error" variant="solid" icon="i-heroicons-trash"
+                    <UButton size="sm" color="error" variant="solid" icon="solar:trash-bin-minimalistic-bold"
                         @click="showDeleteModal = true">
                         Delete
                     </UButton>
