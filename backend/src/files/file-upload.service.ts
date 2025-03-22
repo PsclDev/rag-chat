@@ -4,8 +4,13 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { ConfigService } from '@config';
-import { DrizzleDb, InjectDrizzle } from '@database';
-import * as schema from '@database';
+import {
+  DrizzleDb,
+  File,
+  FileQueue,
+  FileStatus,
+  InjectDrizzle,
+} from '@database';
 import { generateId } from 'shared';
 
 import { FileDto } from './dto/file.dto';
@@ -102,7 +107,7 @@ export class FileUploadService {
     meta: Express.Multer.File,
   ): Promise<FileDto> {
     const [result]: FileEntity[] = await this.db.transaction(async (tx) => {
-      await tx.insert(schema.File).values({
+      await tx.insert(File).values({
         id,
         path,
         size: meta.size,
@@ -110,18 +115,18 @@ export class FileUploadService {
         originalname: meta.originalname,
       });
 
-      await tx.insert(schema.FileQueue).values({
+      await tx.insert(FileQueue).values({
         id: generateId(),
         fileId: id,
       });
 
-      await tx.insert(schema.FileStatus).values({
+      await tx.insert(FileStatus).values({
         id: generateId(),
         fileId: id,
       });
 
       return await tx.query.File.findMany({
-        where: eq(schema.File.id, id),
+        where: eq(File.id, id),
         with: {
           status: true,
         },
