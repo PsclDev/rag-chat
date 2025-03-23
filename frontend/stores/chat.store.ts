@@ -3,6 +3,7 @@ import type { ThreadDto, MessageDto } from '../types/chat.types';
 export const useChatStore = defineStore("chat", () => {
 	const { socket } = useChatSocket();
 	const baseUrl = useRuntimeConfig().public.apiBaseUrl;
+	const toast = useToast()
 	const isLoading = ref(false);
 	const activeThread = ref<ThreadDto | null>(null)
 	const activeThreadIdx = ref(-1)
@@ -93,8 +94,12 @@ export const useChatStore = defineStore("chat", () => {
 			const data = await response.json();
 			threads.value = data;
 		} catch (error) {
-			console.error('Error fetching files:', error);
-			throw error;
+			toast.add({
+				title: 'Error fetching chat history',
+				description: error,
+				color: 'error',
+				icon: 'i-heroicons-exclamation-triangle',
+			})
 		}
 
 	}

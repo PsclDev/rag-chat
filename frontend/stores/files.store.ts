@@ -3,6 +3,7 @@ import type { FileDto, FileUploadResultDto, FileStatusStep, FileStatusDto } from
 export const useFilesStore = defineStore("files", () => {
 	const { socket } = useNotificationSocket();
 	const baseUrl = useRuntimeConfig().public.apiBaseUrl;
+	const toast = useToast()
 	const files = ref<FileDto[]>([]);
 	
 	socket.on('fileStatusUpdate', (data: { fileId: string, status: FileStatusDto[] }) => {
@@ -17,8 +18,12 @@ export const useFilesStore = defineStore("files", () => {
 			const data = await response.json();
 			files.value = data;
 		} catch (error) {
-			console.error('Error fetching files:', error);
-			throw error;
+			toast.add({
+				title: 'Error fetching files',
+				description: error,
+				color: 'error',
+				icon: 'i-heroicons-exclamation-triangle',
+			})
 		}
 	}
 
