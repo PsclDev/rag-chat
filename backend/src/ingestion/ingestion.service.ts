@@ -3,9 +3,11 @@ import { eq } from 'drizzle-orm';
 import pLimit from 'p-limit';
 
 import { ConfigService } from '@config';
-import { DrizzleDb, File, InjectDrizzle } from '@database';
+import { DrizzleDb, File, FileQueue, InjectDrizzle } from '@database';
+import { EmbeddingService } from '@shared/embedding/embedding.service';
 
 import { IngestionQueueService } from './ingestion-queue.service';
+import { IngestionStatusService } from './ingestion-status.service';
 import { ProcessorFactory } from './processors';
 
 @Injectable()
@@ -19,6 +21,8 @@ export class IngestionService {
     private readonly configService: ConfigService,
     @InjectDrizzle() private readonly db: DrizzleDb,
     private readonly queue: IngestionQueueService,
+    private readonly statusService: IngestionStatusService,
+    private readonly embeddingService: EmbeddingService,
     private readonly processorFactory: ProcessorFactory,
   ) {}
 
@@ -46,9 +50,11 @@ export class IngestionService {
             limit(async () => {
               if (this.isShuttingDown) return;
 
-              // Create a new abort controller for this file
               const fileAbortController = new AbortController();
-              this.fileAbortControllers.set(queuedFile.id, fileAbortController);
+              this.fileAbortControllers.set(
+                queuedFile.fileId,
+                fileAbortController,
+              );
 
               try {
                 const file = await this.db.query.File.findFirst({
@@ -81,7 +87,7 @@ export class IngestionService {
                 );
               } catch (error: unknown) {
                 if (error instanceof Error) {
-                  if (error.name === 'AbortError') {
+                  if (error.name === 'AbortIngestion') {
                     this.logger.warn(
                       `Processing of file ${queuedFile.fileId} was aborted`,
                     );
@@ -91,9 +97,17 @@ export class IngestionService {
                       error.stack,
                     );
                   }
+
+                  await this.db
+                    .update(FileQueue)
+                    .set({
+                      isProcessing: false,
+                      isCompleted: true,
+                      completedAt: new Date(),
+                    })
+                    .where(eq(FileQueue.id, queuedFile.id));
                 }
               } finally {
-                // Clean up the abort controller
                 this.fileAbortControllers.delete(queuedFile.id);
               }
             }),
@@ -112,23 +126,28 @@ export class IngestionService {
     this.logger.warn('Application is shutting down. Stopping ingestion...');
     this.isShuttingDown = true;
 
-    // Abort all ongoing file processing
     for (const controller of this.fileAbortControllers.values()) {
       controller.abort();
     }
     this.fileAbortControllers.clear();
   }
 
-  reingestFile(fileId: string): void {
-    //TODO: Implement reingestion
+  async reingestFile(fileId: string): Promise<void> {
     this.abortFile(fileId);
+
+    await this.statusService.resetStatusForFile(fileId);
+    await this.embeddingService.deleteAllEmbeddings(fileId);
+    await this.db
+      .update(FileQueue)
+      .set({
+        nodeId: null,
+        isProcessing: false,
+        isCompleted: false,
+        completedAt: null,
+      })
+      .where(eq(FileQueue.fileId, fileId));
   }
 
-  /**
-   * Abort processing of a specific file
-   * @param fileId The ID of the file to abort processing for
-   * @returns true if the file was being processed and was aborted, false otherwise
-   */
   abortFile(fileId: string): boolean {
     const controller = this.fileAbortControllers.get(fileId);
     if (!controller) {
@@ -136,9 +155,9 @@ export class IngestionService {
       return false;
     }
 
-    controller.abort();
+    this.logger.log(`Sending abort signal for file ${fileId}`);
+    controller.abort('AbortIngestion');
     this.fileAbortControllers.delete(fileId);
-    this.logger.log(`Aborted processing for file ${fileId}`);
     return true;
   }
 

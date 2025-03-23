@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, not, and } from 'drizzle-orm';
 
 import {
   DrizzleDb,
@@ -61,6 +61,23 @@ export class IngestionStatusService {
         completedAt: setCompletedAt ? new Date() : null,
       })
       .returning();
+
+    const all = await this.db
+      .select()
+      .from(FileStatus)
+      .where(eq(FileStatus.fileId, fileId));
+    this.notificationService.emitFileStatusUpdate(fileId, all);
+  }
+
+  async resetStatusForFile(fileId: string): Promise<void> {
+    await this.db
+      .delete(FileStatus)
+      .where(
+        and(
+          eq(FileStatus.fileId, fileId),
+          not(eq(FileStatus.step, FileStatusStep.QUEUED)),
+        ),
+      );
 
     const all = await this.db
       .select()

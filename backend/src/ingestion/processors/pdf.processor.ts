@@ -34,12 +34,6 @@ export class PdfProcessor extends BaseProcessor {
     ingestion: FileIngestionVo,
     abortSignal: AbortSignal,
   ): Promise<void> {
-    this.logger.debug(
-      'Deleting all existing embeddings for file',
-      ingestion.file.id,
-    );
-    await this.embeddingService.deleteAllEmbeddings(ingestion.file.id);
-
     const unstructuredRes = await this.unstructuredService.partition(
       ingestion.file,
       {

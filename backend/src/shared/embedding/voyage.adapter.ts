@@ -57,7 +57,7 @@ export class VoyageAdapterService extends EmbeddingService {
   }
 
   async deleteAllEmbeddings(fileId: string): Promise<void> {
-    this.logger.debug('Deleting all existing embeddings for file', fileId);
+    this.logger.debug(`Deleting all existing embeddings for file ${fileId}`);
     await this.db.delete(Embedding).where(eq(Embedding.fileId, fileId));
   }
 

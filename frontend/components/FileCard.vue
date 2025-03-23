@@ -45,7 +45,7 @@
             </div>
         </UCard>
 
-        <FileDetails v-model="showDetails" :file="file" @view="handleView" @reprocess="handleReprocess"
+        <FileDetails v-model="showDetails" :file="file" @view="handleView" @reprocess="showReingestModal = true"
             @delete="showDeleteModal = true" />
 
         <PdfEmbed v-model="showEmbed" :file-id="file.id" />
@@ -54,6 +54,11 @@
             :message="`Are you sure you want to delete '${file.originalname}'? This action cannot be undone.`"
             icon="i-heroicons-exclamation-triangle" icon-class="text-red-400" confirm-button-text="Delete"
             confirm-button-color="error" @confirm="handleDelete" />
+
+        <ConfirmModal v-model="showReingestModal" title="Confirm Reingestion"
+            :message="`Are you sure to reprocess '${file.originalname}'? All previous embeddings will be deleted.`"
+            icon="i-heroicons-exclamation-triangle" icon-class="text-red-400" confirm-button-text="Reingest"
+            confirm-button-color="error" @confirm="handleReprocess" />
     </div>
 </template>
 
@@ -69,8 +74,8 @@ const { processingSteps, getCardStepClass, getCurrentStepLabel } = useFileStatus
 const showEmbed = ref(false)
 const showDetails = ref(false)
 const showDeleteModal = ref(false)
+const showReingestModal = ref(false)
 
-// Action handlers
 const handleView = () => {
     showEmbed.value = true
 }

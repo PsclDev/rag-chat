@@ -52,11 +52,6 @@ export abstract class BaseProcessor {
         .where(eq(FileQueue.id, ingestion.queue.id));
       this.logger.debug(`Finished processing file: ${ingestion.file.id}`);
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        this.logger.warn(`Processing of file ${ingestion.file.id} was aborted`);
-        return;
-      }
-
       this.ingestionStatusService.setNewStatusForFile(
         ingestion.file.id,
         FileStatusStep.FAILED,
