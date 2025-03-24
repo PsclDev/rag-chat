@@ -4,6 +4,7 @@ import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
+import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 
 import { BaseProcessor } from './base.processor';
@@ -11,8 +12,15 @@ import { PdfProcessor } from './pdf.processor';
 
 @Injectable()
 export class ProcessorFactory {
-  private readonly processors = [PdfProcessor] as const;
-  private readonly instances: BaseProcessor[];
+  private readonly processors: {
+    processor: typeof PdfProcessor;
+    supportedMimetypes: string[];
+  }[] = [
+    {
+      processor: PdfProcessor,
+      supportedMimetypes: ['application/pdf'],
+    },
+  ] as const;
 
   constructor(
     private readonly configService: ConfigService,
@@ -20,48 +28,34 @@ export class ProcessorFactory {
     private readonly ingestionStatusService: IngestionStatusService,
     private readonly unstructuredService: UnstructuredService,
     private readonly embeddingService: EmbeddingService,
-  ) {
-    this.instances = this.processors.map(
-      (Processor) =>
-        new Processor(
-          configService,
-          db,
-          ingestionStatusService,
-          unstructuredService,
-          embeddingService,
-        ),
-    );
-  }
+  ) {}
 
   canFileBeProcessed(mimetype: string): boolean {
-    return this.instances.some((processor) =>
+    return this.processors.some((processor) =>
       processor.supportedMimetypes.includes(mimetype),
     );
   }
 
-  create(mimetype: string): BaseProcessor | null {
-    const matchingProcessor = this.instances.find((p) =>
-      p.supportedMimetypes.includes(mimetype),
+  create(
+    ingestion: FileIngestionVo,
+    abortSignal: AbortSignal,
+  ): BaseProcessor | null {
+    const matchingProcessor = this.processors.find((p) =>
+      p.supportedMimetypes.includes(ingestion.file.mimetype),
     );
 
     if (!matchingProcessor) {
       return null;
     }
 
-    const processor = this.processors.find(
-      (P) => matchingProcessor instanceof P,
-    );
-
-    if (!processor) {
-      throw new Error(`Instance of processor for ${mimetype} not found`);
-    }
-
-    return new processor(
+    return new matchingProcessor.processor(
       this.configService,
       this.db,
       this.ingestionStatusService,
       this.unstructuredService,
       this.embeddingService,
+      ingestion,
+      abortSignal,
     );
   }
 }

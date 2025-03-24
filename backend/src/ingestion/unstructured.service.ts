@@ -60,10 +60,7 @@ export class UnstructuredService {
       );
 
       this.printProcessingTime(startTime, file.originalname);
-
-      this.logger.log('Response', {
-        elementsCount: data.length,
-      });
+      this.logger.log(`Extracted ${data.length} elements`);
 
       return data;
     } catch (error: unknown) {

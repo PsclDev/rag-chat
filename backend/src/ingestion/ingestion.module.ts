@@ -8,7 +8,7 @@ import { IngestionQueueService } from './ingestion-queue.service';
 import { IngestionStatusService } from './ingestion-status.service';
 import { IngestionController } from './ingestion.controller';
 import { IngestionService } from './ingestion.service';
-import { PdfProcessor, ProcessorFactory } from './processors';
+import { ProcessorFactory } from './processors';
 import { UnstructuredService } from './unstructured.service';
 
 @Module({
@@ -18,7 +18,6 @@ import { UnstructuredService } from './unstructured.service';
     UnstructuredService,
     IngestionQueueService,
     IngestionStatusService,
-    PdfProcessor,
     ProcessorFactory,
   ],
 })

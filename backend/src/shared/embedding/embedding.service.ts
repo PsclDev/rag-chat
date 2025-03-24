@@ -1,3 +1,9 @@
+export interface ImageEmbeddingVo {
+  fileId: string;
+  mimeType: string;
+  base64Image: string;
+}
+
 export interface EmbeddingResponse {
   object: 'list';
   data: { object: 'embedding'; embedding: number[]; index: number }[];
@@ -14,11 +20,16 @@ export interface SimilarityResult {
 }
 
 export abstract class EmbeddingService {
-  abstract createEmbeddings(
+  abstract createTextEmbeddings(
     fileId: string,
     content: string[],
     abortSignal: AbortSignal,
-  );
+  ): Promise<void>;
+  abstract createImageEmbeddings(
+    fileId: string,
+    images: ImageEmbeddingVo[],
+    abortSignal: AbortSignal,
+  ): Promise<void>;
   abstract deleteAllEmbeddings(fileId: string): Promise<void>;
   abstract findSimilarEmbeddings(
     query: string,

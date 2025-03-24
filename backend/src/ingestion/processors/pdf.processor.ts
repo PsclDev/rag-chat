@@ -12,7 +12,6 @@ import { BaseProcessor } from './base.processor';
 
 export class PdfProcessor extends BaseProcessor {
   protected readonly logger = new Logger('PdfProcessor');
-  supportedMimetypes = ['application/pdf'];
 
   constructor(
     readonly configService: ConfigService,
@@ -20,6 +19,8 @@ export class PdfProcessor extends BaseProcessor {
     readonly ingestionStatusService: IngestionStatusService,
     readonly unstructuredService: UnstructuredService,
     readonly embeddingService: EmbeddingService,
+    ingestion: FileIngestionVo,
+    abortSignal: AbortSignal,
   ) {
     super(
       configService,
@@ -27,22 +28,21 @@ export class PdfProcessor extends BaseProcessor {
       ingestionStatusService,
       unstructuredService,
       embeddingService,
+      ingestion,
+      abortSignal,
     );
   }
 
-  async specificProcess(
-    ingestion: FileIngestionVo,
-    abortSignal: AbortSignal,
-  ): Promise<void> {
+  async specificProcess(): Promise<void> {
     const unstructuredRes = await this.unstructuredService.partition(
-      ingestion.file,
+      this.ingestionFile.file,
       {
         chunkingStrategy: 'by_title',
         strategy: Strategy.HiRes,
         splitPdfPage: true,
         splitPdfConcurrencyLevel: 15,
       },
-      abortSignal,
+      this.abortSignal,
     );
 
     if (!unstructuredRes.length) {
@@ -54,10 +54,20 @@ export class PdfProcessor extends BaseProcessor {
       this.preprocessText(element.text),
     );
 
-    await this.embeddingService.createEmbeddings(
-      ingestion.file.id,
+    const extractedImages = await this.extractImages(
+      unstructuredRes.map((element) => element.metadata.orig_elements),
+    );
+
+    await this.embeddingService.createTextEmbeddings(
+      this.ingestionFile.file.id,
       processedContent,
-      abortSignal,
+      this.abortSignal,
+    );
+
+    await this.embeddingService.createImageEmbeddings(
+      this.ingestionFile.file.id,
+      extractedImages,
+      this.abortSignal,
     );
   }
 }

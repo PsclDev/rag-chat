@@ -26,6 +26,20 @@ export interface UnstructuredPartitionResponse {
   };
 }
 
+export interface UnstructuredOrigElement {
+  element_id: string;
+  type: 'Table' | 'Image';
+  text: string;
+  metadata: {
+    coordinates: [number, number][];
+    language: string[];
+    text_as_html: string;
+    image_base64: string;
+    image_mime_type: string;
+    page_number: number;
+  };
+}
+
 export function getIngestionOptions(options: IngestionOptionsVo): object {
   return {
     chunking_strategy: 'by_title',

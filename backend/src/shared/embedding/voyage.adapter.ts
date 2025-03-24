@@ -5,7 +5,7 @@ import { ConfigService } from '@config';
 import { DrizzleDb, Embedding, InjectDrizzle } from '@database';
 import { AnthropicService } from '@llm/models/anthropic.service';
 
-import { EmbeddingService } from './embedding.service';
+import { EmbeddingService, ImageEmbeddingVo } from './embedding.service';
 
 interface EmbeddingResponse {
   object: 'list';
@@ -61,36 +61,73 @@ export class VoyageAdapterService extends EmbeddingService {
     await this.db.delete(Embedding).where(eq(Embedding.fileId, fileId));
   }
 
-  async createEmbeddings(
+  async createTextEmbeddings(
     fileId: string,
     content: string[],
     abortSignal: AbortSignal,
+    documentId: string | undefined = undefined,
   ) {
     try {
-      this.logger.debug('Creating embeddings with Voyage');
+      this.logger.debug('Creating text embeddings with Voyage');
       const response = await fetch(
         'https://api.voyageai.com/v1/embeddings',
         this.getHttpOptions(content, abortSignal),
       );
 
       const { data } = (await response.json()) as EmbeddingResponse;
-      for (const embedding of data) {
-        const keywords = await this.llmService.generateEmbeddingKeywords(
-          content[embedding.index],
-        );
-        await this.db.insert(Embedding).values({
-          fileId,
-          content: content[embedding.index],
-          keywords,
-          embedding: embedding.embedding,
-        });
-      }
+      await Promise.all(
+        data.map(async (embedding) => {
+          const keywords = await this.llmService.generateEmbeddingKeywords(
+            content[embedding.index],
+          );
+          await this.db.insert(Embedding).values({
+            documentId: documentId ?? fileId,
+            fileId,
+            content: content[embedding.index],
+            keywords,
+            embedding: embedding.embedding,
+          });
+        }),
+      );
 
       this.logger.log(`Inserted ${data.length} embeddings`);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Error creating embeddings: ${errorMessage}`);
+      this.logger.error(`Error creating text embeddings: ${errorMessage}`);
+    }
+  }
+
+  async createImageEmbeddings(
+    fileId: string,
+    images: ImageEmbeddingVo[],
+    abortSignal: AbortSignal,
+  ) {
+    try {
+      const filteredImages = images.filter((image) =>
+        ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(
+          image.mimeType,
+        ),
+      );
+
+      await Promise.all(
+        filteredImages.map(async (image) => {
+          const description = await this.llmService.generateImageDescription(
+            image.mimeType,
+            image.base64Image,
+          );
+          await this.createTextEmbeddings(
+            image.fileId,
+            [description],
+            abortSignal,
+            fileId,
+          );
+        }),
+      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error creating image embeddings: ${errorMessage}`);
     }
   }
 

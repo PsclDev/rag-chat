@@ -50,12 +50,6 @@ export class IngestionService {
             limit(async () => {
               if (this.isShuttingDown) return;
 
-              const fileAbortController = new AbortController();
-              this.fileAbortControllers.set(
-                queuedFile.fileId,
-                fileAbortController,
-              );
-
               try {
                 const file = await this.db.query.File.findFirst({
                   where: eq(File.id, queuedFile.fileId),
@@ -75,16 +69,25 @@ export class IngestionService {
                   return;
                 }
 
-                const processor = this.processorFactory.create(file.mimetype);
+                const fileAbortController = new AbortController();
+                this.fileAbortControllers.set(
+                  queuedFile.fileId,
+                  fileAbortController,
+                );
+
+                const processor = this.processorFactory.create(
+                  {
+                    queue: queuedFile,
+                    file,
+                  },
+                  fileAbortController.signal,
+                );
                 if (!processor) {
                   this.logger.warn(`No processor found for file ${file.id}`);
                   return;
                 }
 
-                await processor.process(
-                  { queue: queuedFile, file },
-                  fileAbortController.signal,
-                );
+                await processor.process();
               } catch (error: unknown) {
                 if (error instanceof Error) {
                   if (error.name === 'AbortIngestion') {

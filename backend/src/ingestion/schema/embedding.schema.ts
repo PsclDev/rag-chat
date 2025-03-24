@@ -4,6 +4,9 @@ import { File } from '../../files/schema/file.schema';
 
 export const Embedding = pgTable('embedding', {
   id: serial('id').primaryKey(),
+  documentId: text('document_id')
+    .notNull()
+    .references(() => File.id, { onDelete: 'cascade' }),
   fileId: text('file_id')
     .notNull()
     .references(() => File.id, { onDelete: 'cascade' }),

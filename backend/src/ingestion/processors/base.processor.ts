@@ -1,44 +1,64 @@
+import { writeFile } from 'fs/promises';
+import { promisify } from 'util';
+import * as zlib from 'zlib';
+
 import { Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { ConfigService } from '@config';
-import { DrizzleDb, FileQueue, FileStatusStep, InjectDrizzle } from '@database';
+import {
+  DrizzleDb,
+  File,
+  FileEntity,
+  FileQueue,
+  FileStatusStep,
+} from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
-import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
-import { EmbeddingService } from 'shared/embedding/embedding.service';
+import {
+  FileIngestionVo,
+  UnstructuredOrigElement,
+} from '@ingestion/vo/ingestion.vo';
+import { generateFilePath, generateId } from '@shared';
+import {
+  EmbeddingService,
+  ImageEmbeddingVo,
+} from 'shared/embedding/embedding.service';
 
 export abstract class BaseProcessor {
   protected readonly logger = new Logger('BaseProcessor');
-  abstract supportedMimetypes: string[];
-  abstract specificProcess(
-    ingestion: FileIngestionVo,
-    signal: AbortSignal,
-  ): Promise<void>;
+  protected ingestionFile: FileIngestionVo;
+  protected abortSignal: AbortSignal;
+
+  abstract specificProcess(): Promise<void>;
 
   constructor(
     public readonly configService: ConfigService,
-    @InjectDrizzle() public readonly db: DrizzleDb,
+    public readonly db: DrizzleDb,
     public readonly ingestionStatusService: IngestionStatusService,
     public readonly unstructuredService: UnstructuredService,
     public readonly embeddingService: EmbeddingService,
-  ) {}
-
-  async process(
-    ingestion: FileIngestionVo,
+    ingestionFile: FileIngestionVo,
     abortSignal: AbortSignal,
-  ): Promise<void> {
-    this.logger.debug(`Starting processing file: ${ingestion.file.id}`);
+  ) {
+    this.ingestionFile = ingestionFile;
+    this.abortSignal = abortSignal;
+  }
+
+  async process(): Promise<void> {
+    this.logger.debug(
+      `Starting processing file: ${this.ingestionFile.file.id}`,
+    );
     try {
       await this.ingestionStatusService.setNewStatusForFile(
-        ingestion.file.id,
+        this.ingestionFile.file.id,
         FileStatusStep.PROCESSING,
       );
 
-      await this.specificProcess(ingestion, abortSignal);
+      await this.specificProcess();
 
       await this.ingestionStatusService.setNewStatusForFile(
-        ingestion.file.id,
+        this.ingestionFile.file.id,
         FileStatusStep.COMPLETED,
         true,
       );
@@ -49,15 +69,20 @@ export abstract class BaseProcessor {
           isProcessing: false,
           completedAt: new Date(),
         })
-        .where(eq(FileQueue.id, ingestion.queue.id));
-      this.logger.debug(`Finished processing file: ${ingestion.file.id}`);
+        .where(eq(FileQueue.id, this.ingestionFile.queue.id));
+      this.logger.debug(
+        `Finished processing file: ${this.ingestionFile.file.id}`,
+      );
     } catch (error) {
       this.ingestionStatusService.setNewStatusForFile(
-        ingestion.file.id,
+        this.ingestionFile.file.id,
         FileStatusStep.FAILED,
       );
 
-      this.logger.error(`Error processing file: ${ingestion.file.id}`, error);
+      this.logger.error(
+        `Error processing file: ${this.ingestionFile.file.id}`,
+        error,
+      );
       throw error;
     }
   }
@@ -83,5 +108,75 @@ export abstract class BaseProcessor {
         .trim() // Remove leading/trailing whitespace
         .replace(/\s+/g, ' ') // Clean up any double spaces that might have been created
     );
+  }
+
+  private async deflateOrigElements(
+    origElements: string[],
+  ): Promise<UnstructuredOrigElement[]> {
+    const inflateAsync = promisify(zlib.inflate);
+    const deflatedOrigElements = await Promise.all(
+      origElements.map(async (element) => {
+        const deflated = await inflateAsync(Buffer.from(element, 'base64'));
+        return JSON.parse(
+          deflated.toString('utf8'),
+        ) as UnstructuredOrigElement[];
+      }),
+    );
+
+    return deflatedOrigElements.flat();
+  }
+
+  async extractImages(origElements: string[]): Promise<ImageEmbeddingVo[]> {
+    const mimeMap: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/svg+xml': 'svg',
+      'image/bmp': 'bmp',
+      'image/tiff': 'tif',
+    };
+
+    const deflatedOrigElements = await this.deflateOrigElements(origElements);
+    const imageBlocks = deflatedOrigElements.filter(
+      (element) => element.type === 'Image',
+    );
+    this.logger.log(`Found ${imageBlocks.length} image blocks`);
+
+    const files: Partial<FileEntity>[] = [];
+    const images: ImageEmbeddingVo[] = [];
+    for (const imageBlock of imageBlocks) {
+      const id = generateId();
+      const extension = mimeMap[imageBlock.metadata.image_mime_type];
+      const mimeType = imageBlock.metadata.image_mime_type;
+      const base64 = imageBlock.metadata.image_base64;
+
+      const filePath = generateFilePath(
+        this.configService.fileStorage.path,
+        this.ingestionFile.file.id,
+        extension,
+        id,
+      );
+      const imageBuffer = Buffer.from(base64, 'base64');
+
+      await writeFile(filePath, imageBuffer);
+      files.push({
+        id,
+        originalname: `${id}.${extension}`,
+        mimetype: mimeType,
+        path: filePath,
+        size: imageBuffer.length,
+        type: 'attachment',
+      });
+      images.push({
+        fileId: id,
+        mimeType,
+        base64Image: base64,
+      });
+    }
+
+    await this.db.insert(File).values(files as FileEntity[]);
+    return images;
   }
 }

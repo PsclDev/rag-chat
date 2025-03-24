@@ -74,6 +74,41 @@ export class AnthropicService {
     }
   }
 
+  async generateImageDescription(
+    mimeType: string,
+    base64Image: string,
+  ): Promise<string> {
+    const prompt = `
+    You are a helpful assistant that generates a description for a given image.
+    The description should captures the essence of the image.
+    `;
+
+    const answer = await this.doRequest(
+      [
+        {
+          role: 'user' as const,
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mimeType as
+                  | 'image/jpeg'
+                  | 'image/png'
+                  | 'image/gif'
+                  | 'image/webp',
+                data: base64Image,
+              },
+            },
+          ],
+        },
+      ],
+      prompt,
+    );
+
+    return answer;
+  }
+
   async generateEmbeddingKeywords(text: string): Promise<string[]> {
     const keywordsSchema = z.object({
       keywords: z.array(z.string()),
