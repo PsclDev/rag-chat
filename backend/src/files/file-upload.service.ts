@@ -11,7 +11,7 @@ import {
   FileStatus,
   InjectDrizzle,
 } from '@database';
-import { generateId } from 'shared';
+import { generateFilePath, generateId } from 'shared';
 
 import { FileDto } from './dto/file.dto';
 import { FileUploadResultDto, RejectedFileDto } from './dto/upload.dto';
@@ -45,7 +45,12 @@ export class FileUploadService {
 
     for (const file of files) {
       const fileId = generateId();
-      const filePath = this.generateFilePath(fileId, file);
+      const extension = file.path.split('.').pop()!;
+      const filePath = generateFilePath(
+        this.config.fileStorage.path,
+        fileId,
+        extension,
+      );
 
       try {
         this.validateFile(file);
@@ -82,16 +87,6 @@ export class FileUploadService {
     }
   }
 
-  private generateFilePath(fileId: string, file: Express.Multer.File): string {
-    const today = new Date();
-    const dateFolder = `${today.getFullYear()}/${String(
-      today.getMonth() + 1,
-    ).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
-    const extension = file.path.split('.').pop();
-
-    return `${this.config.fileStorage.path}/${dateFolder}/${fileId}.${extension}`;
-  }
-
   private moveFileToStorage(oldPath: string, newPath: string): void {
     const dirPath = newPath.substring(0, newPath.lastIndexOf('/'));
     if (!fs.existsSync(dirPath)) {
@@ -113,6 +108,7 @@ export class FileUploadService {
         size: meta.size,
         mimetype: meta.mimetype,
         originalname: meta.originalname,
+        type: 'document',
       });
 
       await tx.insert(FileQueue).values({

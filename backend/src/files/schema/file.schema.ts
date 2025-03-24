@@ -15,6 +15,7 @@ export const File = pgTable('file', {
   mimetype: text('mimetype').notNull(),
   path: text('path').notNull(),
   size: integer('size').notNull(),
+  type: text('type', { enum: ['attachment', 'document'] }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
