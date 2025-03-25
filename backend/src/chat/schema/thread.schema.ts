@@ -1,11 +1,13 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
+import { generateId } from '@shared';
+
 import { Message, MessageEntity, toMessageDto } from './message.schema';
 import { ThreadDto } from '../dto/thread.dto';
 
 export const Thread = pgTable('thread', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
   title: text('title').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   lastMessageAt: timestamp('last_message_at').notNull().defaultNow(),

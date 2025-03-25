@@ -1,11 +1,13 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
+import { generateId } from '@shared';
+
 import { Thread } from './thread.schema';
 import { MessageDto } from '../dto/message.dto';
 
 export const Message = pgTable('message', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
   threadId: text('thread_id')
     .notNull()
     .references(() => Thread.id, { onDelete: 'cascade' }),

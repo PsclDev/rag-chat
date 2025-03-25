@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
 
 import { ConfigService } from '@config';
-import { DrizzleDb, Embedding, InjectDrizzle } from '@database';
+import { DrizzleDb, FileEmbedding, InjectDrizzle } from '@database';
 import { AnthropicService } from '@llm/models/anthropic.service';
 
 import { EmbeddingService, ImageEmbeddingVo } from './embedding.service';
@@ -58,7 +58,7 @@ export class VoyageAdapterService extends EmbeddingService {
 
   async deleteAllEmbeddings(fileId: string): Promise<void> {
     this.logger.debug(`Deleting all existing embeddings for file ${fileId}`);
-    await this.db.delete(Embedding).where(eq(Embedding.fileId, fileId));
+    await this.db.delete(FileEmbedding).where(eq(FileEmbedding.fileId, fileId));
   }
 
   async createTextEmbeddings(
@@ -80,12 +80,12 @@ export class VoyageAdapterService extends EmbeddingService {
           const keywords = await this.llmService.generateEmbeddingKeywords(
             content[embedding.index],
           );
-          await this.db.insert(Embedding).values({
+          await this.db.insert(FileEmbedding).values({
             documentId: documentId ?? fileId,
             fileId,
             content: content[embedding.index],
             keywords,
-            embedding: embedding.embedding,
+            vector: embedding.embedding,
           });
         }),
       );
@@ -146,16 +146,16 @@ export class VoyageAdapterService extends EmbeddingService {
       const queryEmbedding = data.data[0].embedding;
 
       const similarity = sql<number>`1 - (${cosineDistance(
-        Embedding.embedding,
+        FileEmbedding.vector,
         queryEmbedding,
       )})`;
       const similarEmbeddings = await this.db
         .select({
-          fileId: Embedding.fileId,
-          content: Embedding.content,
+          fileId: FileEmbedding.fileId,
+          content: FileEmbedding.content,
           similarity,
         })
-        .from(Embedding)
+        .from(FileEmbedding)
         .where(gt(similarity, 0.5))
         .orderBy(desc(similarity))
         .limit(limit);

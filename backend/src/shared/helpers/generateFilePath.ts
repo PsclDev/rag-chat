@@ -1,8 +1,8 @@
 export function generateFilePath(
   basePath: string,
-  fileId: string,
+  documentId: string,
   extension: string,
   fileName?: string,
 ): string {
-  return `${basePath}/${fileId}/${fileName ?? 'file'}.${extension}`;
+  return `${basePath}/${documentId}/${fileName ?? 'file'}.${extension}`;
 }
