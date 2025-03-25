@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, vector } from 'drizzle-orm/pg-core';
 
-import { generateId } from '@shared';
+import { generateId } from '../../shared/helpers/generateId';
 
 import { File } from './file.schema';
 

@@ -6,7 +6,7 @@ import {
   text,
 } from 'drizzle-orm/pg-core';
 
-import { generateId } from '@shared';
+import { generateId } from '../../shared/helpers/generateId';
 
 import { Document } from './document.schema';
 

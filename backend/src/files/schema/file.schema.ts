@@ -1,6 +1,6 @@
 import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 
-import { generateId } from '@shared';
+import { generateId } from '../../shared/helpers/generateId';
 import { FileDto } from 'files/dto/file.dto';
 
 export const File = pgTable('file', {

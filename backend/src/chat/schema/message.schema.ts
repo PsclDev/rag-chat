@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
-import { generateId } from '@shared';
+import { generateId } from '../../shared/helpers/generateId';
 
 import { Thread } from './thread.schema';
 import { MessageDto } from '../dto/message.dto';

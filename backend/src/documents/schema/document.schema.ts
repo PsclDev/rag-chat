@@ -3,7 +3,7 @@ import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 import { DocumentDto } from '@documents/dto/document.dto';
 import { File, FileEntity, toFileDto } from '@file/schema/file.schema';
-import { generateId } from '@shared';
+import { generateId } from '../../shared/helpers/generateId';
 
 import {
   DocumentStatus,

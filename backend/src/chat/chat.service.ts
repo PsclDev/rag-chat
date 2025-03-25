@@ -11,7 +11,6 @@ import {
   toThreadDto,
 } from '@database';
 import { AnthropicService } from '@llm/models/anthropic.service';
-import { generateId } from '@shared';
 import { EmbeddingService } from '@shared/embedding/embedding.service';
 
 import { NewChatMessageDto } from './dto/message.dto';
@@ -25,13 +24,12 @@ export class ChatService {
     private readonly db: DrizzleDb,
     private readonly embeddingService: EmbeddingService,
     private readonly llmService: AnthropicService,
-  ) {}
+  ) { }
 
   async newThread(socket: Socket, payload: NewChatMessageDto) {
     const thread = await this.db
       .insert(Thread)
       .values({
-        id: generateId(),
         title: 'New Chat',
       })
       .returning();
@@ -48,7 +46,6 @@ export class ChatService {
     const msg = await this.db
       .insert(Message)
       .values({
-        id: generateId(),
         threadId: message.threadId,
         author: 'user',
         content: message.message,
@@ -79,7 +76,6 @@ export class ChatService {
     const msg = await this.db
       .insert(Message)
       .values({
-        id: generateId(),
         threadId,
         author: 'assistant',
         content: response,

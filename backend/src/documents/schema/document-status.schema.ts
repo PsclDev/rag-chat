@@ -5,7 +5,7 @@ import {
   DocumentStatusDto,
   DocumentStatusStep,
 } from '@documents/dto/document.dto';
-import { generateId } from '@shared';
+import { generateId } from '../../shared/helpers/generateId';
 
 import { Document } from '../../documents/schema/document.schema';
 
