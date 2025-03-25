@@ -1,2 +1,0 @@
-ALTER TABLE "embedding" ADD COLUMN "document_id" text NOT NULL;--> statement-breakpoint
-ALTER TABLE "embedding" ADD CONSTRAINT "embedding_document_id_file_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."file"("id") ON DELETE cascade ON UPDATE no action;

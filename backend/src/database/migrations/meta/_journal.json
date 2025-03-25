@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1738787994741,
-      "tag": "0000_init_file",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1739477491789,
-      "tag": "0001_init_embedding",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1739636247358,
-      "tag": "0002_init_file_status",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1740173355871,
-      "tag": "0003_init_file_queue",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1741636735331,
-      "tag": "0004_init_thread_and_messages",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1742044190319,
-      "tag": "0005_remove_filename",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1742678796085,
-      "tag": "0006_embedding_keywords",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1742847928071,
-      "tag": "0007_add_file_type",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1742848540971,
-      "tag": "0008_add_document_id",
+      "when": 1742941321029,
+      "tag": "0000_init_database",
       "breakpoints": true
     }
   ]

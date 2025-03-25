@@ -1,1 +1,0 @@
-ALTER TABLE "file" ADD COLUMN "type" text NOT NULL;
