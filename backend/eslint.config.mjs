@@ -2,6 +2,7 @@
 import eslint from '@eslint/js';
 import * as importPlugin from 'eslint-plugin-import';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import * as eslintPluginDrizzle from 'eslint-plugin-drizzle';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -16,6 +17,7 @@ export default tseslint.config(
   importPlugin.flatConfigs.recommended,
   // @ts-ignore
   importPlugin.flatConfigs.typescript,
+  eslintPluginDrizzle.configs.recommended,
   {
     languageOptions: {
       globals: {

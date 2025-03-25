@@ -15,13 +15,15 @@ import { AppController } from './app.controller';
 import { PG_MIGRATIONS_PATH, PG_PROVIDER } from './app.definition';
 import { AppService } from './app.service';
 import { FileModule } from './files/file.module';
+import { DocumentModule } from '@documents/document.module';
 
 @Module({
   imports: [
+    ChatModule,
     ConfigModule,
+    DocumentModule,
     FileModule,
     IngestionModule,
-    ChatModule,
     LlmModule,
     SharedModule,
     DrizzlePGModule.registerAsync({
@@ -57,7 +59,7 @@ export class AppModule implements OnModuleInit {
   constructor(
     @InjectDrizzle()
     private readonly db: DrizzleDb,
-  ) {}
+  ) { }
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Trying to migrate database...');
