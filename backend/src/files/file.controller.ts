@@ -1,31 +1,32 @@
 import { createReadStream } from 'fs';
 
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Res,
-  StreamableFile,
-} from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Post, Res, StreamableFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
 
-import { toFileDto } from '@database';
-
-import { FileDto } from './dto/file.dto';
 import { FileService } from './file.service';
 
 import type { Response } from 'express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { FileUploadResultDto } from './dto/upload.dto';
+import { FileUploadService } from './file-upload.service';
 
-@Controller('files')
+@Controller('file')
 export class FileController {
-  constructor(private readonly fileService: FileService) {}
+  constructor(
+    private readonly fileService: FileService,
+    private readonly fileUploadService: FileUploadService,
+  ) { }
 
-  @Get()
-  async getFiles(): Promise<FileDto[]> {
-    const result = await this.fileService.getFiles();
-    return result.map(toFileDto);
+  @Post('upload')
+  @UseInterceptors(AnyFilesInterceptor())
+  async uploadFile(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ): Promise<FileUploadResultDto> {
+    if (!files?.length) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    const result = await this.fileUploadService.handleUpload(files);
+    return result;
   }
 
   @Get(':id')
@@ -41,11 +42,5 @@ export class FileController {
       'Content-Length': file.size.toString(),
     });
     return new StreamableFile(stream);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteFile(@Param('id') id: string): Promise<void> {
-    await this.fileService.deleteFile(id);
   }
 }

@@ -1,9 +1,11 @@
-import { pgTable, serial, text, timestamp, vector } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, vector } from 'drizzle-orm/pg-core';
 
-import { File } from '../../files/schema/file.schema';
+import { generateId } from '@shared';
 
-export const Embedding = pgTable('embedding', {
-  id: serial('id').primaryKey(),
+import { File } from './file.schema';
+
+export const FileEmbedding = pgTable('file_embedding', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
   documentId: text('document_id')
     .notNull()
     .references(() => File.id, { onDelete: 'cascade' }),
@@ -17,4 +19,4 @@ export const Embedding = pgTable('embedding', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export type EmbeddingEntity = typeof Embedding.$inferSelect;
+export type FileEmbeddingEntity = typeof FileEmbedding.$inferSelect;

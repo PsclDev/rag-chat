@@ -1,16 +1,10 @@
-import { relations } from 'drizzle-orm';
 import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 
+import { generateId } from '@shared';
 import { FileDto } from 'files/dto/file.dto';
 
-import {
-  FileStatus,
-  FileStatusEntity,
-  toFileStatusDto,
-} from './file-status.schema';
-
 export const File = pgTable('file', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
   originalname: text('originalname').notNull(),
   mimetype: text('mimetype').notNull(),
   path: text('path').notNull(),
@@ -20,13 +14,7 @@ export const File = pgTable('file', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const FileRelations = relations(File, ({ many }) => ({
-  status: many(FileStatus),
-}));
-
-export type FileEntity = typeof File.$inferSelect & {
-  status?: FileStatusEntity[];
-};
+export type FileEntity = typeof File.$inferSelect;
 
 export function toFileDto(entity: FileEntity): FileDto {
   return {
@@ -34,7 +22,6 @@ export function toFileDto(entity: FileEntity): FileDto {
     originalname: entity.originalname,
     mimetype: entity.mimetype,
     size: entity.size,
-    status: entity.status?.map(toFileStatusDto) || [],
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   };

@@ -1,99 +1,93 @@
 import * as fs from 'fs';
 
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { ConfigService } from '@config';
-import {
-  DrizzleDb,
-  File,
-  FileQueue,
-  FileStatus,
-  InjectDrizzle,
-} from '@database';
+import { DocumentQueue, DocumentStatus, DrizzleDb, File, InjectDrizzle } from '@database';
 import { generateFilePath, generateId } from 'shared';
 
 import { FileDto } from './dto/file.dto';
 import { FileUploadResultDto, RejectedFileDto } from './dto/upload.dto';
 import { FileEntity, toFileDto } from './schema/file.schema';
+import { Document } from '@documents/schema/document.schema';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from './definition';
+import pLimit from 'p-limit';
 
 @Injectable()
 export class FileUploadService {
   private readonly logger = new Logger('FileUploadService');
-  private readonly allowedMimeTypes: string[] = [
-    'image/jpeg',
-    'image/png',
-    'application/pdf',
-  ] as const;
-  private readonly maxFileSize = 100 * 1024 * 1024;
+  private readonly limit = pLimit(3);
 
   constructor(
     private readonly config: ConfigService,
     @InjectDrizzle()
     private readonly db: DrizzleDb,
-  ) {}
+  ) { }
 
   async handleUpload(
     files: Express.Multer.File[],
   ): Promise<FileUploadResultDto> {
-    if (!files?.length) {
-      throw new BadRequestException('no files uploaded');
+    const processedFiles = await Promise.all(files.map(file => this.limit(() => this.processFile(file))));
+
+    return processedFiles.reduce<FileUploadResultDto>(
+      (acc, result) => {
+        if ('reason' in result) {
+          acc.rejectedFiles.push(result);
+        } else {
+          acc.validFiles.push(result as FileDto);
+        }
+        return acc;
+      },
+      { validFiles: [], rejectedFiles: [] }
+    );
+  }
+
+  private async processFile(file: Express.Multer.File): Promise<FileDto | RejectedFileDto> {
+    const fileId = generateId();
+    const extension = file.path.split('.').pop()!;
+    const filePath = generateFilePath(
+      this.config.fileStorage.path,
+      fileId,
+      extension,
+    );
+
+    try {
+      this.validateFile(file);
+      await this.moveFileToStorage(file.path, filePath);
+
+      return await this.insertToDb(fileId, filePath, file);
+    } catch (error: unknown) {
+      await this.cleanupOnFailure(file.path, filePath);
+      this.logger.error(`File ${file.originalname} failed to upload: ${error}`);
+
+      return {
+        file,
+        reason: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-
-    const validFiles: FileDto[] = [];
-    const rejectedFiles: RejectedFileDto[] = [];
-
-    for (const file of files) {
-      const fileId = generateId();
-      const extension = file.path.split('.').pop()!;
-      const filePath = generateFilePath(
-        this.config.fileStorage.path,
-        fileId,
-        extension,
-      );
-
-      try {
-        this.validateFile(file);
-        this.moveFileToStorage(file.path, filePath);
-        const createdFile = await this.insertToDb(fileId, filePath, file);
-        validFiles.push(createdFile);
-      } catch (error: unknown) {
-        this.cleanupOnFailure(file.path, filePath);
-
-        rejectedFiles.push({
-          file,
-          reason: error instanceof Error ? error.message : 'Unknown error',
-        });
-        this.logger.error(error);
-      }
-    }
-
-    return { validFiles, rejectedFiles };
   }
 
   private validateFile(file: Express.Multer.File): void {
-    if (!this.allowedMimeTypes.includes(file.mimetype)) {
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       throw new Error(
-        `Invalid file type. Allowed types are: ${this.allowedMimeTypes.join(
+        `Invalid file type. Allowed types are: ${ALLOWED_MIME_TYPES.join(
           ', ',
         )}`,
       );
     }
 
-    if (file.size > this.maxFileSize) {
+    if (file.size > MAX_FILE_SIZE) {
       throw new Error(
-        `File size exceeds maximum allowed size of ${this.maxFileSize} bytes`,
+        `File size exceeds maximum allowed size of ${MAX_FILE_SIZE} bytes`,
       );
     }
   }
 
-  private moveFileToStorage(oldPath: string, newPath: string): void {
+  private async moveFileToStorage(oldPath: string, newPath: string): Promise<void> {
     const dirPath = newPath.substring(0, newPath.lastIndexOf('/'));
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    fs.renameSync(oldPath, newPath);
+    await fs.promises.mkdir(dirPath, { recursive: true });
+    await fs.promises.rename(oldPath, newPath);
   }
 
   private async insertToDb(
@@ -111,48 +105,39 @@ export class FileUploadService {
         type: 'document',
       });
 
-      await tx.insert(FileQueue).values({
-        id: generateId(),
+      const document = await tx.insert(Document).values({
         fileId: id,
+      }).returning();
+
+      await tx.insert(DocumentQueue).values({
+        documentId: document[0].id,
       });
 
-      await tx.insert(FileStatus).values({
-        id: generateId(),
-        fileId: id,
+      await tx.insert(DocumentStatus).values({
+        documentId: document[0].id,
       });
 
       return await tx.query.File.findMany({
         where: eq(File.id, id),
-        with: {
-          status: true,
-        },
       });
     });
 
     return toFileDto(result);
   }
 
-  private cleanupOnFailure(oldPath: string, newPath: string): void {
-    try {
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
+  private async cleanupOnFailure(oldPath: string, newPath: string): Promise<void> {
+    const tryRemove = async (path: string) => {
+      try {
+        await fs.promises.unlink(path);
+      } catch (unlinkError: unknown) {
+        const errorMessage =
+          unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
+        this.logger.warn(
+          `Failed to delete file ${path}: ${errorMessage}`,
+        );
       }
-    } catch (unlinkError: unknown) {
-      const errorMessage =
-        unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
-      this.logger.warn(
-        `Failed to delete temporary file ${oldPath}: ${errorMessage}`,
-      );
     }
 
-    try {
-      if (fs.existsSync(newPath)) {
-        fs.unlinkSync(newPath);
-      }
-    } catch (unlinkError: unknown) {
-      const errorMessage =
-        unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
-      this.logger.warn(`Failed to delete file ${newPath}: ${errorMessage}`);
-    }
+    await Promise.all([tryRemove(oldPath), tryRemove(newPath)]);
   }
 }
