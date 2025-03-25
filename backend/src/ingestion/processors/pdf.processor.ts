@@ -5,7 +5,7 @@ import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
-import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
+import { DocumentIngestionVo } from '@ingestion/vo/ingestion.vo';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 
 import { BaseProcessor } from './base.processor';
@@ -19,7 +19,7 @@ export class PdfProcessor extends BaseProcessor {
     readonly ingestionStatusService: IngestionStatusService,
     readonly unstructuredService: UnstructuredService,
     readonly embeddingService: EmbeddingService,
-    ingestion: FileIngestionVo,
+    ingestion: DocumentIngestionVo,
     abortSignal: AbortSignal,
   ) {
     super(
@@ -35,7 +35,7 @@ export class PdfProcessor extends BaseProcessor {
 
   async specificProcess(): Promise<void> {
     const unstructuredRes = await this.unstructuredService.partition(
-      this.ingestionFile.file,
+      this.document.file,
       {
         chunkingStrategy: 'by_title',
         strategy: Strategy.HiRes,
@@ -59,13 +59,13 @@ export class PdfProcessor extends BaseProcessor {
     );
 
     await this.embeddingService.createTextEmbeddings(
-      this.ingestionFile.file.id,
+      this.document.id,
       processedContent,
       this.abortSignal,
     );
 
     await this.embeddingService.createImageEmbeddings(
-      this.ingestionFile.file.id,
+      this.document.id,
       extractedImages,
       this.abortSignal,
     );

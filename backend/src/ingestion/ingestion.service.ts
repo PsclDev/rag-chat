@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import pLimit from 'p-limit';
 
 import { ConfigService } from '@config';
-import { DrizzleDb, File, FileQueue, InjectDrizzle } from '@database';
+import { DocumentQueue, DrizzleDb, InjectDrizzle, Document } from '@database';
 import { EmbeddingService } from '@shared/embedding/embedding.service';
 
 import { IngestionQueueService } from './ingestion-queue.service';
@@ -15,8 +15,7 @@ export class IngestionService {
   private readonly logger = new Logger('IngestionService');
   private isProcessing = false;
   private isShuttingDown = false;
-  private readonly fileAbortControllers = new Map<string, AbortController>();
-
+  private readonly documentAbortControllers = new Map<string, AbortController>();
   constructor(
     private readonly configService: ConfigService,
     @InjectDrizzle() private readonly db: DrizzleDb,
@@ -24,7 +23,7 @@ export class IngestionService {
     private readonly statusService: IngestionStatusService,
     private readonly embeddingService: EmbeddingService,
     private readonly processorFactory: ProcessorFactory,
-  ) {}
+  ) { }
 
   async startIngestion(): Promise<void> {
     if (this.isProcessing) {
@@ -37,53 +36,58 @@ export class IngestionService {
 
     try {
       while (!this.isShuttingDown) {
-        const filesToIngest = await this.queue.getFilesToIngest();
-        if (filesToIngest.length === 0) {
-          this.logger.verbose('No files to process, waiting 15 seconds...');
+        const documentsToIngest = await this.queue.getDocumentsToIngest();
+        if (documentsToIngest.length === 0) {
+          this.logger.verbose('No documents to process, waiting 15 seconds...');
           await this.sleep(15000);
           continue;
         }
 
         const limit = pLimit(this.configService.ingestion.batchSize);
         await Promise.all(
-          filesToIngest.map((queuedFile) =>
+          documentsToIngest.map((queuedDocument) =>
             limit(async () => {
               if (this.isShuttingDown) return;
 
               try {
-                const file = await this.db.query.File.findFirst({
-                  where: eq(File.id, queuedFile.fileId),
+                const document = await this.db.query.Document.findFirst({
+                  where: eq(Document.id, queuedDocument.documentId),
+                  with: {
+                    file: true,
+                    status: true,
+                    attachments: true,
+                  },
                 });
-                if (!file) {
-                  this.logger.warn(`File ${queuedFile.fileId} not found`);
+                if (!document) {
+                  this.logger.warn(`Document ${queuedDocument.documentId} not found`);
                   return;
                 }
 
                 const processable = this.processorFactory.canFileBeProcessed(
-                  file.mimetype,
+                  document.file.mimetype,
                 );
                 if (!processable) {
                   this.logger.warn(
-                    `File ${file.id} is not processable, mimetype: ${file.mimetype}`,
+                    `Document ${document.id} is not processable, mimetype: ${document.file.mimetype}`,
                   );
                   return;
                 }
 
-                const fileAbortController = new AbortController();
-                this.fileAbortControllers.set(
-                  queuedFile.fileId,
-                  fileAbortController,
+                const documentAbortController = new AbortController();
+                this.documentAbortControllers.set(
+                  queuedDocument.documentId,
+                  documentAbortController,
                 );
 
                 const processor = this.processorFactory.create(
                   {
-                    queue: queuedFile,
-                    file,
+                    queue: queuedDocument,
+                    document,
                   },
-                  fileAbortController.signal,
+                  documentAbortController.signal,
                 );
                 if (!processor) {
-                  this.logger.warn(`No processor found for file ${file.id}`);
+                  this.logger.warn(`No processor found for document ${document.id}`);
                   return;
                 }
 
@@ -92,26 +96,26 @@ export class IngestionService {
                 if (error instanceof Error) {
                   if (error.name === 'AbortIngestion') {
                     this.logger.warn(
-                      `Processing of file ${queuedFile.fileId} was aborted`,
+                      `Processing of document ${queuedDocument.documentId} was aborted`,
                     );
                   } else {
                     this.logger.error(
-                      `Error processing file ${queuedFile.fileId}: ${error.message}`,
+                      `Error processing document ${queuedDocument.documentId}: ${error.message}`,
                       error.stack,
                     );
                   }
 
                   await this.db
-                    .update(FileQueue)
+                    .update(DocumentQueue)
                     .set({
                       isProcessing: false,
                       isCompleted: true,
                       completedAt: new Date(),
                     })
-                    .where(eq(FileQueue.id, queuedFile.id));
+                    .where(eq(DocumentQueue.id, queuedDocument.id));
                 }
               } finally {
-                this.fileAbortControllers.delete(queuedFile.id);
+                this.documentAbortControllers.delete(queuedDocument.id);
               }
             }),
           ),
@@ -129,38 +133,38 @@ export class IngestionService {
     this.logger.warn('Application is shutting down. Stopping ingestion...');
     this.isShuttingDown = true;
 
-    for (const controller of this.fileAbortControllers.values()) {
+    for (const controller of this.documentAbortControllers.values()) {
       controller.abort();
     }
-    this.fileAbortControllers.clear();
+    this.documentAbortControllers.clear();
   }
 
-  async reingestFile(fileId: string): Promise<void> {
-    this.abortFile(fileId);
+  async reingestDocument(documentId: string): Promise<void> {
+    this.abortDocument(documentId);
 
-    await this.statusService.resetStatusForFile(fileId);
-    await this.embeddingService.deleteAllEmbeddings(fileId);
+    await this.statusService.resetStatusForDocument(documentId);
+    await this.embeddingService.deleteAllEmbeddings(documentId);
     await this.db
-      .update(FileQueue)
+      .update(DocumentQueue)
       .set({
         nodeId: null,
         isProcessing: false,
         isCompleted: false,
         completedAt: null,
       })
-      .where(eq(FileQueue.fileId, fileId));
+      .where(eq(DocumentQueue.documentId, documentId));
   }
 
-  abortFile(fileId: string): boolean {
-    const controller = this.fileAbortControllers.get(fileId);
+  abortDocument(documentId: string): boolean {
+    const controller = this.documentAbortControllers.get(documentId);
     if (!controller) {
-      this.logger.warn(`No active processing found for file ${fileId}`);
+      this.logger.warn(`No active processing found for document ${documentId}`);
       return false;
     }
 
-    this.logger.log(`Sending abort signal for file ${fileId}`);
+    this.logger.log(`Sending abort signal for document ${documentId}`);
     controller.abort('AbortIngestion');
-    this.fileAbortControllers.delete(fileId);
+    this.documentAbortControllers.delete(documentId);
     return true;
   }
 

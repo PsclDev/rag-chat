@@ -10,13 +10,14 @@ import {
   DrizzleDb,
   File,
   FileEntity,
-  FileQueue,
-  FileStatusStep,
+  DocumentQueue,
+  DocumentQueueEntity,
+  DocumentEntity,
 } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
 import {
-  FileIngestionVo,
+  DocumentIngestionVo,
   UnstructuredOrigElement,
 } from '@ingestion/vo/ingestion.vo';
 import { generateFilePath, generateId } from '@shared';
@@ -24,10 +25,12 @@ import {
   EmbeddingService,
   ImageEmbeddingVo,
 } from 'shared/embedding/embedding.service';
+import { DocumentStatusStep } from '@documents/dto/document.dto';
 
 export abstract class BaseProcessor {
   protected readonly logger = new Logger('BaseProcessor');
-  protected ingestionFile: FileIngestionVo;
+  protected queuedDocument: DocumentQueueEntity;
+  protected document: DocumentEntity;
   protected abortSignal: AbortSignal;
 
   abstract specificProcess(): Promise<void>;
@@ -38,49 +41,49 @@ export abstract class BaseProcessor {
     public readonly ingestionStatusService: IngestionStatusService,
     public readonly unstructuredService: UnstructuredService,
     public readonly embeddingService: EmbeddingService,
-    ingestionFile: FileIngestionVo,
+    ingestionDocument: DocumentIngestionVo,
     abortSignal: AbortSignal,
   ) {
-    this.ingestionFile = ingestionFile;
+    this.queuedDocument = ingestionDocument.queue;
+    this.document = ingestionDocument.document;
     this.abortSignal = abortSignal;
   }
 
   async process(): Promise<void> {
     this.logger.debug(
-      `Starting processing file: ${this.ingestionFile.file.id}`,
+      `Starting processing document: ${this.document.id}`,
     );
     try {
-      await this.ingestionStatusService.setNewStatusForFile(
-        this.ingestionFile.file.id,
-        FileStatusStep.PROCESSING,
+      await this.ingestionStatusService.setNewStatus(
+        this.document.id,
+        DocumentStatusStep.PROCESSING,
       );
 
       await this.specificProcess();
 
-      await this.ingestionStatusService.setNewStatusForFile(
-        this.ingestionFile.file.id,
-        FileStatusStep.COMPLETED,
-        true,
+      await this.ingestionStatusService.setNewStatus(
+        this.document.id,
+        DocumentStatusStep.COMPLETED,
       );
       await this.db
-        .update(FileQueue)
+        .update(DocumentQueue)
         .set({
           isCompleted: true,
           isProcessing: false,
           completedAt: new Date(),
         })
-        .where(eq(FileQueue.id, this.ingestionFile.queue.id));
+        .where(eq(DocumentQueue.id, this.queuedDocument.id));
       this.logger.debug(
-        `Finished processing file: ${this.ingestionFile.file.id}`,
+        `Finished processing document: ${this.document.id}`,
       );
     } catch (error) {
-      this.ingestionStatusService.setNewStatusForFile(
-        this.ingestionFile.file.id,
-        FileStatusStep.FAILED,
+      this.ingestionStatusService.setNewStatus(
+        this.document.id,
+        DocumentStatusStep.FAILED,
       );
 
       this.logger.error(
-        `Error processing file: ${this.ingestionFile.file.id}`,
+        `Error processing document: ${this.document.id}`,
         error,
       );
       throw error;
@@ -154,7 +157,7 @@ export abstract class BaseProcessor {
 
       const filePath = generateFilePath(
         this.configService.fileStorage.path,
-        this.ingestionFile.file.id,
+        this.document.id,
         extension,
         id,
       );

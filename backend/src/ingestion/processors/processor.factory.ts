@@ -4,7 +4,7 @@ import { ConfigService } from '@config';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
-import { FileIngestionVo } from '@ingestion/vo/ingestion.vo';
+import { DocumentIngestionVo } from '@ingestion/vo/ingestion.vo';
 import { EmbeddingService } from 'shared/embedding/embedding.service';
 
 import { BaseProcessor } from './base.processor';
@@ -28,7 +28,7 @@ export class ProcessorFactory {
     private readonly ingestionStatusService: IngestionStatusService,
     private readonly unstructuredService: UnstructuredService,
     private readonly embeddingService: EmbeddingService,
-  ) {}
+  ) { }
 
   canFileBeProcessed(mimetype: string): boolean {
     return this.processors.some((processor) =>
@@ -37,11 +37,11 @@ export class ProcessorFactory {
   }
 
   create(
-    ingestion: FileIngestionVo,
+    ingestion: DocumentIngestionVo,
     abortSignal: AbortSignal,
   ): BaseProcessor | null {
     const matchingProcessor = this.processors.find((p) =>
-      p.supportedMimetypes.includes(ingestion.file.mimetype),
+      p.supportedMimetypes.includes(ingestion.document.file.mimetype),
     );
 
     if (!matchingProcessor) {

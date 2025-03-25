@@ -4,9 +4,9 @@ import { inArray, and, eq, isNull } from 'drizzle-orm';
 import { ConfigService } from '@config';
 import {
   DrizzleDb,
-  FileQueue,
+  DocumentQueue,
   InjectDrizzle,
-  FileQueueEntity,
+  DocumentQueueEntity,
 } from '@database';
 
 @Injectable()
@@ -17,23 +17,23 @@ export class IngestionQueueService {
   constructor(
     private readonly configService: ConfigService,
     @InjectDrizzle() private readonly db: DrizzleDb,
-  ) {}
+  ) { }
 
-  getFilesToIngest(): Promise<FileQueueEntity[]> {
+  getDocumentsToIngest(): Promise<DocumentQueueEntity[]> {
     return this.db.transaction(async (trx) => {
       const whereCondition = this.isFirstRun
         ? and(
-            eq(FileQueue.isCompleted, false),
-            eq(FileQueue.isProcessing, true),
-            eq(FileQueue.nodeId, this.configService.nodeId),
-          )
-        : and(eq(FileQueue.isCompleted, false), isNull(FileQueue.nodeId));
+          eq(DocumentQueue.isCompleted, false),
+          eq(DocumentQueue.isProcessing, true),
+          eq(DocumentQueue.nodeId, this.configService.nodeId),
+        )
+        : and(eq(DocumentQueue.isCompleted, false), isNull(DocumentQueue.nodeId));
 
       const files = await trx
         .select()
-        .from(FileQueue)
+        .from(DocumentQueue)
         .where(whereCondition)
-        .orderBy(FileQueue.enqueuedAt)
+        .orderBy(DocumentQueue.enqueuedAt)
         .limit(this.configService.ingestion.batchSize)
         .for('update', { skipLocked: true });
 
@@ -41,25 +41,25 @@ export class IngestionQueueService {
         this.isFirstRun = false;
         if (files.length > 0) {
           this.logger.warn(
-            `Found ${files.length} stuck files from previous crash`,
+            `Found ${files.length} stuck documents from previous crash`,
           );
           return files;
         }
         // If no stuck files found, immediately try again with isFirstRun = false
-        return this.getFilesToIngest();
+        return this.getDocumentsToIngest();
       }
 
       if (files.length === 0) return [];
 
       await trx
-        .update(FileQueue)
+        .update(DocumentQueue)
         .set({
           isProcessing: true,
           nodeId: this.configService.nodeId,
         })
         .where(
           inArray(
-            FileQueue.id,
+            DocumentQueue.id,
             files.map((f) => f.id),
           ),
         );

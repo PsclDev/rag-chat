@@ -4,11 +4,11 @@ import { eq, desc, not, and } from 'drizzle-orm';
 import {
   DrizzleDb,
   InjectDrizzle,
-  FileStatus,
-  FileStatusEntity,
-  FileStatusStep,
+  DocumentStatus,
+  DocumentStatusEntity,
 } from '@database';
 import { generateId, NotificationService } from '@shared';
+import { DocumentStatusStep } from '@documents/dto/document.dto';
 
 @Injectable()
 export class IngestionStatusService {
@@ -17,46 +17,46 @@ export class IngestionStatusService {
   constructor(
     @InjectDrizzle() private readonly db: DrizzleDb,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
-  async getLastStatusForFile(fileId: string): Promise<FileStatusEntity> {
+  async getLastStatusForDocument(documentId: string): Promise<DocumentStatusEntity> {
     const res = await this.db
       .select()
-      .from(FileStatus)
-      .where(eq(FileStatus.fileId, fileId))
-      .orderBy(desc(FileStatus.createdAt))
+      .from(DocumentStatus)
+      .where(eq(DocumentStatus.documentId, documentId))
+      .orderBy(desc(DocumentStatus.createdAt))
       .limit(1);
 
     if (res.length === 0) {
-      throw new Error(`No status found for file ${fileId}`);
+      throw new Error(`No status found for document ${documentId}`);
     }
 
     return res[0];
   }
 
-  async setNewStatusForFile(
-    fileId: string,
-    step: FileStatusStep,
+  async setNewStatus(
+    documentId: string,
+    step: DocumentStatusStep,
     setCompletedAt = true,
   ): Promise<void> {
-    const lastStep = await this.getLastStatusForFile(fileId);
+    const lastStep = await this.getLastStatusForDocument(documentId);
     if (lastStep.step === step) {
       return;
     }
 
     await this.db
-      .update(FileStatus)
+      .update(DocumentStatus)
       .set({
         completedAt: new Date(),
-        failed: step === FileStatusStep.FAILED,
+        failed: step === DocumentStatusStep.FAILED,
       })
-      .where(eq(FileStatus.id, lastStep.id));
+      .where(eq(DocumentStatus.id, lastStep.id));
 
     await this.db
-      .insert(FileStatus)
+      .insert(DocumentStatus)
       .values({
         id: generateId(),
-        fileId,
+        documentId,
         step,
         completedAt: setCompletedAt ? new Date() : null,
       })
@@ -64,25 +64,25 @@ export class IngestionStatusService {
 
     const all = await this.db
       .select()
-      .from(FileStatus)
-      .where(eq(FileStatus.fileId, fileId));
-    this.notificationService.emitFileStatusUpdate(fileId, all);
+      .from(DocumentStatus)
+      .where(eq(DocumentStatus.documentId, documentId));
+    this.notificationService.emitDocumentStatusUpdate(documentId, all);
   }
 
-  async resetStatusForFile(fileId: string): Promise<void> {
+  async resetStatusForDocument(documentId: string): Promise<void> {
     await this.db
-      .delete(FileStatus)
+      .delete(DocumentStatus)
       .where(
         and(
-          eq(FileStatus.fileId, fileId),
-          not(eq(FileStatus.step, FileStatusStep.QUEUED)),
+          eq(DocumentStatus.documentId, documentId),
+          not(eq(DocumentStatus.step, DocumentStatusStep.QUEUED)),
         ),
       );
 
     const all = await this.db
       .select()
-      .from(FileStatus)
-      .where(eq(FileStatus.fileId, fileId));
-    this.notificationService.emitFileStatusUpdate(fileId, all);
+      .from(DocumentStatus)
+      .where(eq(DocumentStatus.documentId, documentId));
+    this.notificationService.emitDocumentStatusUpdate(documentId, all);
   }
 }
