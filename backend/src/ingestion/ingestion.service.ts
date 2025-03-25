@@ -15,7 +15,10 @@ export class IngestionService {
   private readonly logger = new Logger('IngestionService');
   private isProcessing = false;
   private isShuttingDown = false;
-  private readonly documentAbortControllers = new Map<string, AbortController>();
+  private readonly documentAbortControllers = new Map<
+    string,
+    AbortController
+  >();
   constructor(
     private readonly configService: ConfigService,
     @InjectDrizzle() private readonly db: DrizzleDb,
@@ -23,7 +26,7 @@ export class IngestionService {
     private readonly statusService: IngestionStatusService,
     private readonly embeddingService: EmbeddingService,
     private readonly processorFactory: ProcessorFactory,
-  ) { }
+  ) {}
 
   async startIngestion(): Promise<void> {
     if (this.isProcessing) {
@@ -59,7 +62,9 @@ export class IngestionService {
                   },
                 });
                 if (!document) {
-                  this.logger.warn(`Document ${queuedDocument.documentId} not found`);
+                  this.logger.warn(
+                    `Document ${queuedDocument.documentId} not found`,
+                  );
                   return;
                 }
 
@@ -87,7 +92,9 @@ export class IngestionService {
                   documentAbortController.signal,
                 );
                 if (!processor) {
-                  this.logger.warn(`No processor found for document ${document.id}`);
+                  this.logger.warn(
+                    `No processor found for document ${document.id}`,
+                  );
                   return;
                 }
 

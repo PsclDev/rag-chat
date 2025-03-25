@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as crypto from 'crypto';
 import * as os from 'os';
 
@@ -6,8 +7,9 @@ import * as dotenv from 'dotenv';
 import { ZodError, z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports
 const dotenvExpand = require('dotenv-expand');
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 dotenvExpand.expand(dotenv.config());
 
 const CONFIG_SCHEMA = z.object({
@@ -113,9 +115,10 @@ export class ConfigService {
   }
 
   printAppConfig() {
-    // biome-ignore lint/suspicious/noExplicitAny: because non relevante instances, thats necessary
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars
     const { logger, ...rest } = this as any;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const safeConfig = this.hideSensitiveData(JSON.parse(JSON.stringify(rest)));
     this.logger.log(
       `App Configuration: \n${JSON.stringify(safeConfig, undefined, 2)}`,
@@ -139,6 +142,7 @@ export class ConfigService {
     function replace(obj: object, hideAll = false): void {
       for (const key of Object.keys(obj)) {
         if (isObject(obj[key])) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           replace(obj[key], hideAll || key === 'encryptionKey');
         } else if (shouldHideKey(key, hideAll)) {
           obj[key] = '********';

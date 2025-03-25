@@ -24,7 +24,7 @@ export class ChatService {
     private readonly db: DrizzleDb,
     private readonly embeddingService: EmbeddingService,
     private readonly llmService: AnthropicService,
-  ) { }
+  ) {}
 
   async newThread(socket: Socket, payload: NewChatMessageDto) {
     const thread = await this.db

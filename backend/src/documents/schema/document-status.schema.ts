@@ -5,14 +5,16 @@ import {
   DocumentStatusDto,
   DocumentStatusStep,
 } from '@documents/dto/document.dto';
-import { generateId } from '../../shared/helpers/generateId';
 
 import { Document } from '../../documents/schema/document.schema';
+import { generateId } from '../../shared/helpers/generateId';
 
 export const DocumentStatus = pgTable(
   'document_status',
   {
-    id: text('id').primaryKey().$defaultFn(() => generateId()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => generateId()),
     documentId: text('document_id')
       .notNull()
       .references(() => Document.id, { onDelete: 'cascade' }),

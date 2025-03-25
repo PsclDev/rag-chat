@@ -9,7 +9,7 @@ export class NotificationService {
   private connectedClients: Map<string, Socket> = new Map();
   private socketServer!: Server;
 
-  constructor() { }
+  constructor() {}
 
   setServer(server: Server) {
     this.socketServer = server;

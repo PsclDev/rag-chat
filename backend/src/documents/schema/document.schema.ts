@@ -3,16 +3,18 @@ import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 import { DocumentDto } from '@documents/dto/document.dto';
 import { File, FileEntity, toFileDto } from '@file/schema/file.schema';
-import { generateId } from '../../shared/helpers/generateId';
 
 import {
   DocumentStatus,
   DocumentStatusEntity,
   toDocumentStatusDto,
 } from './document-status.schema';
+import { generateId } from '../../shared/helpers/generateId';
 
 export const Document = pgTable('document', {
-  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => generateId()),
   fileId: text('file_id')
     .notNull()
     .references(() => File.id),

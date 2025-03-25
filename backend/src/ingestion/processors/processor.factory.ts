@@ -28,7 +28,7 @@ export class ProcessorFactory {
     private readonly ingestionStatusService: IngestionStatusService,
     private readonly unstructuredService: UnstructuredService,
     private readonly embeddingService: EmbeddingService,
-  ) { }
+  ) {}
 
   canFileBeProcessed(mimetype: string): boolean {
     return this.processors.some((processor) =>

@@ -6,6 +6,7 @@ import { ConfigService } from '@config';
 import { ConfigModule } from '@config/config.module';
 import { DrizzleDb, InjectDrizzle } from '@database';
 import * as DRIZZLE_SCHEMA from '@database/drizzle.schema';
+import { DocumentModule } from '@documents/document.module';
 import { LlmModule } from '@llm/llm.module';
 import { ChatModule } from 'chat/chat.module';
 import { IngestionModule } from 'ingestion/ingestion.module';
@@ -15,7 +16,6 @@ import { AppController } from './app.controller';
 import { PG_MIGRATIONS_PATH, PG_PROVIDER } from './app.definition';
 import { AppService } from './app.service';
 import { FileModule } from './files/file.module';
-import { DocumentModule } from '@documents/document.module';
 
 @Module({
   imports: [
@@ -59,7 +59,7 @@ export class AppModule implements OnModuleInit {
   constructor(
     @InjectDrizzle()
     private readonly db: DrizzleDb,
-  ) { }
+  ) {}
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Trying to migrate database...');

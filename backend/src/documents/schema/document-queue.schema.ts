@@ -6,12 +6,13 @@ import {
   text,
 } from 'drizzle-orm/pg-core';
 
+import { Document } from './document.schema';
 import { generateId } from '../../shared/helpers/generateId';
 
-import { Document } from './document.schema';
-
 export const DocumentQueue = pgTable('document_queue', {
-  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => generateId()),
   documentId: text('document_id')
     .notNull()
     .references(() => Document.id, { onDelete: 'cascade' }),

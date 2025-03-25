@@ -7,8 +7,8 @@ import {
   DocumentStatus,
   DocumentStatusEntity,
 } from '@database';
-import { generateId, NotificationService } from '@shared';
 import { DocumentStatusStep } from '@documents/dto/document.dto';
+import { generateId, NotificationService } from '@shared';
 
 @Injectable()
 export class IngestionStatusService {
@@ -17,9 +17,11 @@ export class IngestionStatusService {
   constructor(
     @InjectDrizzle() private readonly db: DrizzleDb,
     private readonly notificationService: NotificationService,
-  ) { }
+  ) {}
 
-  async getLastStatusForDocument(documentId: string): Promise<DocumentStatusEntity> {
+  async getLastStatusForDocument(
+    documentId: string,
+  ): Promise<DocumentStatusEntity> {
     const res = await this.db
       .select()
       .from(DocumentStatus)

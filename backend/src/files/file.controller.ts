@@ -1,20 +1,30 @@
 import { createReadStream } from 'fs';
 
-import { BadRequestException, Controller, Get, Param, Post, Res, StreamableFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Res,
+  StreamableFile,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
+import { FileUploadResultDto } from './dto/upload.dto';
+import { FileUploadService } from './file-upload.service';
 import { FileService } from './file.service';
 
 import type { Response } from 'express';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { FileUploadResultDto } from './dto/upload.dto';
-import { FileUploadService } from './file-upload.service';
 
 @Controller('file')
 export class FileController {
   constructor(
     private readonly fileService: FileService,
     private readonly fileUploadService: FileUploadService,
-  ) { }
+  ) {}
 
   @Post('upload')
   @UseInterceptors(AnyFilesInterceptor())

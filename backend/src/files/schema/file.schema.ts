@@ -1,10 +1,13 @@
 import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 
-import { generateId } from '../../shared/helpers/generateId';
 import { FileDto } from 'files/dto/file.dto';
 
+import { generateId } from '../../shared/helpers/generateId';
+
 export const File = pgTable('file', {
-  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => generateId()),
   originalname: text('originalname').notNull(),
   mimetype: text('mimetype').notNull(),
   path: text('path').notNull(),

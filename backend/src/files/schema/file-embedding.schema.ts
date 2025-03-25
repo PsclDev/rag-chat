@@ -1,11 +1,12 @@
 import { pgTable, text, timestamp, vector } from 'drizzle-orm/pg-core';
 
+import { File } from './file.schema';
 import { generateId } from '../../shared/helpers/generateId';
 
-import { File } from './file.schema';
-
 export const FileEmbedding = pgTable('file_embedding', {
-  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => generateId()),
   documentId: text('document_id')
     .notNull()
     .references(() => File.id, { onDelete: 'cascade' }),

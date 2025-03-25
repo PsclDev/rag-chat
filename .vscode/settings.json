@@ -1,7 +1,8 @@
 {
-	"biome.enabled": false,
-	"editor.codeActionsOnSave": {
-		"source.fixAll.eslint": "explicit"
-	},
-	"eslint.enable": true,
+    "biome.enabled": false,
+    "editor.formatOnSave": false,
+    "eslint.enable": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    }
 }

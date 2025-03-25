@@ -2,17 +2,23 @@ import * as fs from 'fs';
 
 import { Injectable, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import pLimit from 'p-limit';
 
 import { ConfigService } from '@config';
-import { DocumentQueue, DocumentStatus, DrizzleDb, File, InjectDrizzle } from '@database';
+import {
+  DocumentQueue,
+  DocumentStatus,
+  DrizzleDb,
+  File,
+  InjectDrizzle,
+} from '@database';
+import { Document } from '@documents/schema/document.schema';
 import { generateFilePath, generateId } from 'shared';
 
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from './definition';
 import { FileDto } from './dto/file.dto';
 import { FileUploadResultDto, RejectedFileDto } from './dto/upload.dto';
 import { FileEntity, toFileDto } from './schema/file.schema';
-import { Document } from '@documents/schema/document.schema';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from './definition';
-import pLimit from 'p-limit';
 
 @Injectable()
 export class FileUploadService {
@@ -23,27 +29,31 @@ export class FileUploadService {
     private readonly config: ConfigService,
     @InjectDrizzle()
     private readonly db: DrizzleDb,
-  ) { }
+  ) {}
 
   async handleUpload(
     files: Express.Multer.File[],
   ): Promise<FileUploadResultDto> {
-    const processedFiles = await Promise.all(files.map(file => this.limit(() => this.processFile(file))));
+    const processedFiles = await Promise.all(
+      files.map((file) => this.limit(() => this.processFile(file))),
+    );
 
     return processedFiles.reduce<FileUploadResultDto>(
       (acc, result) => {
         if ('reason' in result) {
           acc.rejectedFiles.push(result);
         } else {
-          acc.validFiles.push(result as FileDto);
+          acc.validFiles.push(result);
         }
         return acc;
       },
-      { validFiles: [], rejectedFiles: [] }
+      { validFiles: [], rejectedFiles: [] },
     );
   }
 
-  private async processFile(file: Express.Multer.File): Promise<FileDto | RejectedFileDto> {
+  private async processFile(
+    file: Express.Multer.File,
+  ): Promise<FileDto | RejectedFileDto> {
     const fileId = generateId();
     const extension = file.path.split('.').pop()!;
     const filePath = generateFilePath(
@@ -59,7 +69,7 @@ export class FileUploadService {
       return await this.insertToDb(fileId, filePath, file);
     } catch (error: unknown) {
       await this.cleanupOnFailure(file.path, filePath);
-      this.logger.error(`File ${file.originalname} failed to upload: ${error}`);
+      this.logger.error(`File ${file.originalname} failed to upload `);
 
       return {
         file,
@@ -84,7 +94,10 @@ export class FileUploadService {
     }
   }
 
-  private async moveFileToStorage(oldPath: string, newPath: string): Promise<void> {
+  private async moveFileToStorage(
+    oldPath: string,
+    newPath: string,
+  ): Promise<void> {
     const dirPath = newPath.substring(0, newPath.lastIndexOf('/'));
     await fs.promises.mkdir(dirPath, { recursive: true });
     await fs.promises.rename(oldPath, newPath);
@@ -105,9 +118,12 @@ export class FileUploadService {
         type: 'document',
       });
 
-      const document = await tx.insert(Document).values({
-        fileId: id,
-      }).returning();
+      const document = await tx
+        .insert(Document)
+        .values({
+          fileId: id,
+        })
+        .returning();
 
       await tx.insert(DocumentQueue).values({
         documentId: document[0].id,
@@ -125,18 +141,19 @@ export class FileUploadService {
     return toFileDto(result);
   }
 
-  private async cleanupOnFailure(oldPath: string, newPath: string): Promise<void> {
+  private async cleanupOnFailure(
+    oldPath: string,
+    newPath: string,
+  ): Promise<void> {
     const tryRemove = async (path: string) => {
       try {
         await fs.promises.unlink(path);
       } catch (unlinkError: unknown) {
         const errorMessage =
           unlinkError instanceof Error ? unlinkError.message : 'Unknown error';
-        this.logger.warn(
-          `Failed to delete file ${path}: ${errorMessage}`,
-        );
+        this.logger.warn(`Failed to delete file ${path}: ${errorMessage}`);
       }
-    }
+    };
 
     await Promise.all([tryRemove(oldPath), tryRemove(newPath)]);
   }

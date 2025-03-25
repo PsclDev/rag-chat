@@ -14,6 +14,7 @@ import {
   DocumentQueueEntity,
   DocumentEntity,
 } from '@database';
+import { DocumentStatusStep } from '@documents/dto/document.dto';
 import { IngestionStatusService } from '@ingestion/ingestion-status.service';
 import { UnstructuredService } from '@ingestion/unstructured.service';
 import {
@@ -25,7 +26,6 @@ import {
   EmbeddingService,
   ImageEmbeddingVo,
 } from 'shared/embedding/embedding.service';
-import { DocumentStatusStep } from '@documents/dto/document.dto';
 
 export abstract class BaseProcessor {
   protected readonly logger = new Logger('BaseProcessor');
@@ -50,9 +50,7 @@ export abstract class BaseProcessor {
   }
 
   async process(): Promise<void> {
-    this.logger.debug(
-      `Starting processing document: ${this.document.id}`,
-    );
+    this.logger.debug(`Starting processing document: ${this.document.id}`);
     try {
       await this.ingestionStatusService.setNewStatus(
         this.document.id,
@@ -73,9 +71,7 @@ export abstract class BaseProcessor {
           completedAt: new Date(),
         })
         .where(eq(DocumentQueue.id, this.queuedDocument.id));
-      this.logger.debug(
-        `Finished processing document: ${this.document.id}`,
-      );
+      this.logger.debug(`Finished processing document: ${this.document.id}`);
     } catch (error) {
       this.ingestionStatusService.setNewStatus(
         this.document.id,

@@ -17,17 +17,20 @@ export class IngestionQueueService {
   constructor(
     private readonly configService: ConfigService,
     @InjectDrizzle() private readonly db: DrizzleDb,
-  ) { }
+  ) {}
 
   getDocumentsToIngest(): Promise<DocumentQueueEntity[]> {
     return this.db.transaction(async (trx) => {
       const whereCondition = this.isFirstRun
         ? and(
-          eq(DocumentQueue.isCompleted, false),
-          eq(DocumentQueue.isProcessing, true),
-          eq(DocumentQueue.nodeId, this.configService.nodeId),
-        )
-        : and(eq(DocumentQueue.isCompleted, false), isNull(DocumentQueue.nodeId));
+            eq(DocumentQueue.isCompleted, false),
+            eq(DocumentQueue.isProcessing, true),
+            eq(DocumentQueue.nodeId, this.configService.nodeId),
+          )
+        : and(
+            eq(DocumentQueue.isCompleted, false),
+            isNull(DocumentQueue.nodeId),
+          );
 
       const files = await trx
         .select()
