@@ -1,125 +1,90 @@
-<template>
-    <UCard class="mb-4 bg-slate-900 shadow-lg border border-slate-800">
-        <div class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center transition-colors hover:border-slate-500"
-            @dragover.prevent @drop.prevent="handleDrop">
-            <UIcon name="i-heroicons-cloud-arrow-up" class="text-5xl mb-3 text-emerald-400" />
-            <p class="text-slate-300 text-base">
-                Drop files here or
-                <UButton variant="ghost" class="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900"
-                    @click="triggerFileInput">
-                    browse
-                </UButton>
-            </p>
-            <input type="file" ref="fileInput" class="hidden" multiple @change="handleFileSelect" />
-        </div>
-    </UCard>
-
-    <div class="mb-8 space-y-4">
-        <div class="relative">
-            <UIcon name="i-heroicons-magnifying-glass"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input v-model="searchQuery" type="text" placeholder="Search files..."
-                class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-slate-200 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors" />
-        </div>
-
-        <StatusFilter v-model="statusFilter" />
-    </div>
-
-    <TransitionGroup tag="div" class="grid gap-4 auto-cols-fr" :class="gridColumns" name="grid" appear>
-        <FileCard v-for="file in filteredFiles" :key="file.id" :file="file" />
-    </TransitionGroup>
-
-    <UploadModal v-model="showUploadModal" :files="selectedFiles" @files-change="selectedFiles = $event"
-        @upload-complete="handleUploadComplete" />
-</template>
-
 <script setup lang="ts">
-import { useFilesStore } from '~/stores/files.store'
+import { useDocumentStore } from '~/stores/document.store'
 
-const store = useFilesStore()
-const { files } = storeToRefs(store)
+const store = useDocumentStore()
+const { documents } = storeToRefs(store)
 const { getCurrentStep } = useFileStatus()
-const fileInput = ref<HTMLInputElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('all')
-const showUploadModal = ref(false)
-const selectedFiles = ref<File[]>([])
 
 onMounted(async () => {
-    await store.getFiles()
-    const notificationSocket = useNotificationSocket();
-    notificationSocket.connect();
+  await store.getDocuments()
+  const notificationSocket = useNotificationSocket()
+  notificationSocket.connect()
 })
 
-const filteredFiles = computed(() =>
-    files.value
-        .filter(file => {
-            // Apply search filter
-            if (searchQuery.value) {
-                const query = searchQuery.value.toLowerCase()
-                if (!file.originalname.toLowerCase().includes(query)) {
-                    return false
-                }
-            }
+const filteredDocuments = computed(() =>
+  documents.value
+    .filter((document) => {
+      // Apply search filter
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        if (!document.file.originalname.toLowerCase().includes(query)) {
+          return false
+        }
+      }
 
-            // Apply status filter
-            if (statusFilter.value !== 'all') {
-                const currentStep = getCurrentStep(file.status)
-                if (currentStep !== statusFilter.value) {
-                    return false
-                }
-            }
+      // Apply status filter
+      if (statusFilter.value !== 'all') {
+        const currentStep = getCurrentStep(document.status)
+        if (currentStep !== statusFilter.value) {
+          return false
+        }
+      }
 
-            return true
-        })
+      return true
+    }),
 )
 
 const gridColumns = computed(() => {
-    const length = filteredFiles.value.length
-    return {
-        'grid-cols-1 sm:grid-cols-2': length >= 1,
-        'md:grid-cols-3': length < 15,
-        'md:grid-cols-4': length >= 15,
-        'lg:grid-cols-3': length < 12,
-        'lg:grid-cols-4': length >= 12,
-        'lg:grid-cols-5': length >= 25,
-    }
+  const length = filteredDocuments.value.length
+  return {
+    'grid-cols-2 sm:grid-cols-2': length >= 1,
+    'md:grid-cols-3': length < 15,
+    'md:grid-cols-4': length >= 15,
+    'lg:grid-cols-3': length < 12,
+    'lg:grid-cols-4': length >= 12,
+    'lg:grid-cols-5': length >= 25,
+  }
 })
-
-const triggerFileInput = () => {
-    if (fileInput.value) {
-        fileInput.value.value = ''
-    }
-    fileInput.value?.click()
-}
-
-const handleFileSelect = (event: Event) => {
-    const input = event.target as HTMLInputElement
-    if (input.files) {
-        const files = Array.from(input.files)
-        handleFiles(files)
-    }
-}
-
-const handleDrop = (event: DragEvent) => {
-    if (event.dataTransfer?.files) {
-        const files = Array.from(event.dataTransfer.files)
-        handleFiles(files)
-    }
-}
-
-const handleFiles = (files: File[]) => {
-    selectedFiles.value = files
-    showUploadModal.value = true
-    console.log('files', files, 'selectedFiles', selectedFiles.value, 'showUploadModal', showUploadModal.value);
-}
-
-const handleUploadComplete = () => {
-    selectedFiles.value = []
-    showUploadModal.value = false
-}
-
 </script>
+
+<template>
+  <div>
+    <FileUploadCard />
+
+    <div class="my-8 space-y-4">
+      <div class="relative">
+        <UIcon
+          name="i-heroicons-magnifying-glass"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search files..."
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-slate-200 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors"
+        >
+      </div>
+
+      <StatusFilter v-model="statusFilter" />
+    </div>
+
+    <TransitionGroup
+      tag="div"
+      class="grid gap-4 auto-cols-fr"
+      :class="gridColumns"
+      name="grid"
+      appear
+    >
+      <DocumentCard
+        v-for="document in filteredDocuments"
+        :key="document.id"
+        :document="document"
+      />
+    </TransitionGroup>
+  </div>
+</template>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');

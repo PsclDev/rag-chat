@@ -1,95 +1,96 @@
-import type { FileDto, FileUploadResultDto, FileStatusStep, FileStatusDto } from '../types/file.types';
+import type { FileDto, FileUploadResultDto, FileStatusStep, FileStatusDto } from '../types/file.types'
 
-export const useFilesStore = defineStore("files", () => {
-	const { socket } = useNotificationSocket();
-	const baseUrl = useRuntimeConfig().public.apiBaseUrl;
-	const toast = useToast()
-	const files = ref<FileDto[]>([]);
-	
-	socket.on('fileStatusUpdate', (data: { fileId: string, status: FileStatusDto[] }) => {
-		files.value = files.value.map(f => 
-			f.id === data.fileId ? { ...f, status: data.status } : f
-		);
-	});
+export const useFilesStore = defineStore('files', () => {
+  const { socket } = useNotificationSocket()
+  const baseUrl = useRuntimeConfig().public.apiBaseUrl
+  const toast = useToast()
+  const files = ref<FileDto[]>([])
 
-	async function getFiles() {
-		try {
-			const response = await fetch(`${baseUrl}/files`);
-			const data = await response.json();
-			files.value = data;
-		} catch (error) {
-			toast.add({
-				title: 'Error fetching files',
-				description: error,
-				color: 'error',
-				icon: 'i-heroicons-exclamation-triangle',
-			})
-		}
-	}
+  socket.on('fileStatusUpdate', (data: { fileId: string, status: FileStatusDto[] }) => {
+    files.value = files.value.map(f =>
+      f.id === data.fileId ? { ...f, status: data.status } : f,
+    )
+  })
 
-	function getViewerData(id: string) {
-		const file = files.value.find(f => f.id === id);
-		if (!file) {
-			return undefined;
-		}
+  async function getFiles() {
+    try {
+      const response = await fetch(`${baseUrl}/files`)
+      const data = await response.json()
+      files.value = data
+    }
+    catch (error) {
+      toast.add({
+        title: 'Error fetching files',
+        description: error,
+        color: 'error',
+        icon: 'i-heroicons-exclamation-triangle',
+      })
+    }
+  }
 
-		return {
-			name: file.originalname,
-			url: `${baseUrl}/files/${id}`,
-		}
-	}
+  function getViewerData(id: string) {
+    const file = files.value.find(f => f.id === id)
+    if (!file) {
+      return undefined
+    }
 
-	async function addFile(newFiles: File[]): Promise<FileUploadResultDto> {
-		const formData = new FormData()
-		newFiles.forEach(file => {
-			formData.append('files', file)
-		})
+    return {
+      name: file.originalname,
+      url: `${baseUrl}/files/${id}`,
+    }
+  }
 
-		const response = await fetch(`${baseUrl}/file/upload`, {
-			method: 'POST',
-			body: formData
-		})
+  async function addFile(newFiles: File[]): Promise<FileUploadResultDto> {
+    const formData = new FormData()
+    newFiles.forEach((file) => {
+      formData.append('files', file)
+    })
 
-		if (!response.ok) {
-			throw new Error('Upload failed')
-		}
+    const response = await fetch(`${baseUrl}/file/upload`, {
+      method: 'POST',
+      body: formData,
+    })
 
-		const result = await response.json() as FileUploadResultDto
-		files.value = [...files.value, ...result.validFiles]
+    if (!response.ok) {
+      throw new Error('Upload failed')
+    }
 
-		return result
-	}
+    const result = await response.json() as FileUploadResultDto
+    files.value = [...files.value, ...result.validFiles]
 
-	async function deleteFile(id: string) {
-		const response = await fetch(`${baseUrl}/files/${id}`, {
-			method: 'DELETE',
-		})
+    return result
+  }
 
-		if (!response.ok) {
-			throw new Error('Upload failed')
-		}
-		const index = files.value.findIndex((f) => f.id === id);
-		if (index !== -1) {
-			files.value.splice(index, 1);
-		}
-	}
+  async function deleteFile(id: string) {
+    const response = await fetch(`${baseUrl}/files/${id}`, {
+      method: 'DELETE',
+    })
 
-	async function reprocessFile(id: string) {
-		const response = await fetch(`${baseUrl}/ingestion/reingest/${id}`, {
-			method: 'PATCH',
-		})
-	}
+    if (!response.ok) {
+      throw new Error('Upload failed')
+    }
+    const index = files.value.findIndex(f => f.id === id)
+    if (index !== -1) {
+      files.value.splice(index, 1)
+    }
+  }
 
-	return {
-		files,
-		getFiles,
-		getViewerData,
-		addFile,
-		deleteFile,
-		reprocessFile,
-	};
-});
+  async function reprocessFile(id: string) {
+    const response = await fetch(`${baseUrl}/ingestion/reingest/${id}`, {
+      method: 'PATCH',
+    })
+  }
+
+  return {
+    files,
+    getFiles,
+    getViewerData,
+    addFile,
+    deleteFile,
+    reprocessFile,
+  }
+})
 
 if (import.meta.hot) {
-	import.meta.hot.accept(acceptHMRUpdate(useFilesStore, import.meta.hot))
+  import.meta.hot.accept(acceptHMRUpdate(useFilesStore, import.meta.hot))
 }
